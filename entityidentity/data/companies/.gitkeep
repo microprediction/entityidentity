@@ -1,0 +1,4 @@
+# This directory contains sample company data for the package
+# Large data files are excluded from git (see .gitignore)
+# Users build full databases locally via scripts/companies/update_companies_db.py
+

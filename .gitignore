@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Entity Identity - Development data
+# Exclude intermediate build files, but INCLUDE the final filtered dataset in entityidentity/data/
+/tables/
+/.cache/
+*.log
+build.log
+
+# The filtered mining/energy dataset (~6MB, 50K companies) IS included in the package
+# Users get it immediately after pip install - no building required!

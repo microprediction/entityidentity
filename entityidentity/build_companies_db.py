@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import List, Optional
 import pandas as pd
 from entityidentity.companies.companyidentity import normalize_name
+from entityidentity.companies.companynormalize import canonicalize_name
 
 # Import loaders
 from entityidentity.companies.companygleif import load_gleif_lei, sample_gleif_data
@@ -33,12 +34,14 @@ from entityidentity.companies.companyexchanges import (
 def consolidate_companies(
     use_samples: bool = False,
     cache_dir: Optional[str] = None,
+    max_companies: Optional[int] = None,
 ) -> pd.DataFrame:
     """Consolidate company data from all sources.
     
     Args:
         use_samples: Use sample data instead of downloading (for testing)
         cache_dir: Directory to cache downloaded files
+        max_companies: Maximum number of companies to fetch from GLEIF (default: 10,000)
         
     Returns:
         Consolidated DataFrame with standardized schema
@@ -52,7 +55,8 @@ def consolidate_companies(
         print(f"Using sample GLEIF data: {len(gleif_df)} companies")
     else:
         try:
-            gleif_df = load_gleif_lei(cache_dir=cache_dir, max_records=10000)
+            max_records = max_companies if max_companies else 10000
+            gleif_df = load_gleif_lei(cache_dir=cache_dir, max_records=max_records)
             print(f"Loaded {len(gleif_df)} companies from GLEIF")
         except Exception as e:
             print(f"Failed to load GLEIF data: {e}")
@@ -146,42 +150,67 @@ def consolidate_companies(
 def _normalize_gleif(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize GLEIF data to standard schema."""
     df = df.copy()
+    # Canonicalize name for safe identifier use
+    df['name'] = df['name'].apply(canonicalize_name)
     df['name_norm'] = df['name'].apply(normalize_name)
-    df['aliases'] = [[]] * len(df)  # GLEIF doesn't provide aliases
+    # Flat alias columns (GLEIF doesn't provide aliases)
+    for i in range(1, 6):
+        df[f'alias{i}'] = None
     df['wikidata_qid'] = None
-    df['stock_ticker'] = None
     return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid', 
-               'aliases', 'address', 'city', 'postal_code', 'source']]
+               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
+               'address', 'city', 'postal_code', 'source']]
 
 
 def _normalize_wikidata(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize Wikidata to standard schema."""
     df = df.copy()
+    # Canonicalize name for safe identifier use
+    df['name'] = df['name'].apply(canonicalize_name)
     df['name_norm'] = df['name'].apply(normalize_name)
+    
+    # Convert aliases list to flat columns (alias1, alias2, ..., alias5)
+    def extract_aliases(row):
+        aliases = row.get('aliases', []) if 'aliases' in df.columns else []
+        if not isinstance(aliases, list):
+            aliases = []
+        result = {}
+        for i in range(1, 6):
+            result[f'alias{i}'] = aliases[i-1] if i-1 < len(aliases) else None
+        return pd.Series(result)
+    
+    alias_cols = df.apply(extract_aliases, axis=1)
+    df = pd.concat([df, alias_cols], axis=1)
+    
     df['address'] = None
     df['city'] = None
     df['postal_code'] = None
     return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid',
-               'aliases', 'address', 'city', 'postal_code', 'source']]
+               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
+               'address', 'city', 'postal_code', 'source']]
 
 
 def _normalize_exchange(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize stock exchange data to standard schema."""
     df = df.copy()
+    # Canonicalize name for safe identifier use
+    df['name'] = df['name'].apply(canonicalize_name)
     df['name_norm'] = df['name'].apply(normalize_name)
     df['lei'] = None
     df['wikidata_qid'] = None
-    df['aliases'] = [[]] * len(df)
+    
+    # Use ticker as alias1 if available
+    df['alias1'] = df['ticker'] if 'ticker' in df.columns else None
+    for i in range(2, 6):
+        df[f'alias{i}'] = None
+    
     df['address'] = None
     df['city'] = None
     df['postal_code'] = None
     
-    # Use ticker as alias if available
-    if 'ticker' in df.columns:
-        df['aliases'] = df['ticker'].apply(lambda x: [x] if pd.notna(x) else [])
-    
     return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid',
-               'aliases', 'address', 'city', 'postal_code', 'source']]
+               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
+               'address', 'city', 'postal_code', 'source']]
 
 
 def main():

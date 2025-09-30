@@ -2,176 +2,232 @@
 
 Entity resolution and identity matching for companies.
 
-On-the-fly company name resolution using deterministic blocking, fuzzy scoring, and optional LLM tie-breaking. No server required.
-
-## Features
-
-- **In-memory resolution**: Fast lookups from consolidated Parquet files
-- **Multiple data sources**: GLEIF LEI, Wikidata, stock exchanges (ASX, LSE, TSX, etc.)
-- **Smart matching**: Deterministic blocking + RapidFuzz scoring
-- **Optional LLM tie-breaking**: For ambiguous matches
-- **Aggressive caching**: `functools.lru_cache` for performance
+Fast, in-memory company name resolution using fuzzy matching and smart normalization. No server required.
 
 ## Installation
 
 ```bash
-pip install -e .
+pip install entityidentity
 ```
 
 ## Quick Start
 
-### 1. Build the company database
-
-```bash
-# Quick test with sample data
-python scripts/companies/update_companies_db.py --use-samples
-
-# Full database from live sources (slow, ~2-3GB download)
-python scripts/companies/update_companies_db.py
-```
-
-This creates:
-- `tables/companies/companies.parquet` - Main database (compressed)
-- `tables/companies/companies.csv` - First 500 rows for easy inspection
-- `tables/companies/companies_info.txt` - Database statistics and metadata
-
-### 2. Resolve company names
-
 ```python
 from entityidentity import resolve_company, match_company
 
-# Full resolution with details
-result = resolve_company("BHP Group", country="AU")
-print(result['final'])  # Best match
-print(result['decision'])  # Decision type: auto_high_conf, llm_tiebreak, etc.
-print(result['matches'])  # All top matches with scores
-
-# Simple: just get best match or None
+# Simple matching - returns best match or None
 match = match_company("Apple Inc", country="US")
 if match:
-    print(f"Matched: {match['name']} (LEI: {match['lei']})")
+    print(f"Matched: {match['name']}")
+    print(f"Country: {match['country']}")
+    print(f"LEI: {match.get('lei', 'N/A')}")
+
+# Full resolution with details
+result = resolve_company("BHP Group", country="AU")
+print(result['final'])      # Best match
+print(result['decision'])   # How it was matched
+print(result['matches'])    # All top matches with scores
 ```
 
-## Architecture
+## Features
 
+- **Fast in-memory lookups**: <100ms for most queries
+- **Multiple data sources**: GLEIF LEI, Wikidata, stock exchanges
+- **Smart normalization**: Handles legal suffixes, punctuation, unicode
+- **Fuzzy matching**: RapidFuzz scoring with intelligent blocking
+- **No dependencies**: Works out of the box
+
+## Basic Usage
+
+### Normalize Company Names
+
+```python
+from entityidentity import normalize_name
+
+# Normalize for matching
+normalized = normalize_name("Apple Inc.")
+# Returns: "apple"
+
+normalized = normalize_name("BHP Group Ltd")
+# Returns: "bhp group"
 ```
-entityidentity/
-├── companies/              # Company resolution
-│   ├── companyidentity.py  # Main resolver
-│   ├── companygleif.py     # GLEIF LEI loader
-│   ├── companywikidata.py  # Wikidata loader
-│   └── companyexchanges.py # Exchange loaders
-├── build_companies_db.py   # Consolidation script
-└── COMPANIES.md            # Data source documentation
 
-tables/
-└── companies/
-    └── companies.parquet   # Consolidated lookup database
+### Match Company Names
 
-scripts/
-└── companies/
-    └── update_companies_db.py  # CLI for building database
+```python
+from entityidentity import match_company
 
-tests/
-└── companies/              # Test suite
-    ├── test_companyidentity.py
-    └── test_loaders.py
+# Find best match
+match = match_company("Microsoft Corporation", country="US")
+if match:
+    print(f"Matched to: {match['name']}")
+    print(f"Confidence: {match['score']}")
+```
+
+### Resolve with Details
+
+```python
+from entityidentity import resolve_company
+
+# Get full resolution details
+result = resolve_company("Tesla", country="US")
+
+# Access matched company
+company = result['final']
+print(f"Name: {company['name']}")
+print(f"Country: {company['country']}")
+
+# See decision type
+print(f"Decision: {result['decision']}")
+# Examples: 'auto_high_conf', 'llm_tiebreak', 'low_confidence'
+
+# Review all matches
+for match in result['matches']:
+    print(f"  {match['name']} - Score: {match['score']}")
 ```
 
 ## Data Sources
 
-See [COMPANIES.md](entityidentity/COMPANIES.md) for details on all data sources.
+The package includes pre-built company data from:
 
-**Tier 1 (High Quality)**
-- GLEIF LEI Golden Copy (~2.5M entities, updated 3×/day)
-- Wikidata (rich aliases and metadata)
+- **GLEIF LEI**: Global Legal Entity Identifier database
+- **Wikidata**: Rich company metadata and aliases
+- **Stock Exchanges**: ASX, LSE, TSX listings
 
-**Tier 2 (Exchange Listings)**
-- ASX (Australian Securities Exchange)
-- LSE (London Stock Exchange)  
-- TSX/TSXV (Toronto Stock Exchange)
+Sample data is included in the package for immediate use.
 
-**Tier 3 (Registries - planned)**
-- UK Companies House
-- SEC EDGAR
-- SEDAR+ (Canada)
-
-## Matching Strategy
-
-1. **Normalize**: Lowercase, strip legal suffixes, remove punctuation
-2. **Block candidates**: Country filter, first-token prefix matching
-3. **Score**: RapidFuzz with boosts for country match, LEI presence
-4. **Decide**:
-   - Score ≥ 88 + gap ≥ 6 → auto-accept (high confidence)
-   - Score 76-87 → optional LLM tie-break
-   - Otherwise → return shortlist
-
-## API
-
-### `resolve_company(name, country=None, **kwargs)`
-
-Full resolution with all details.
-
-**Returns:**
-```python
-{
-    "query": {"name": "...", "name_norm": "...", "country": "..."},
-    "matches": [
-        {
-            "name": "Apple Inc.",
-            "score": 95.0,
-            "lei": "529900HNOAA1KXQJUQ27",
-            "country": "US",
-            "wikidata_qid": "Q312",
-            "aliases": ["Apple Computer", "AAPL"],
-            "explain": {"name_norm": "apple", "country_match": True, ...}
-        },
-        # ... more matches
-    ],
-    "final": {...},  # Best match if confident, else None
-    "decision": "auto_high_conf"  # or "llm_tiebreak", "needs_hint_or_llm"
-}
-```
+## API Reference
 
 ### `match_company(name, country=None)`
 
-Simple interface: returns best match dict or None.
+Simple interface to find the best matching company.
+
+**Parameters**:
+- `name` (str): Company name to match
+- `country` (str, optional): ISO 2-letter country code
+
+**Returns**: Dictionary with matched company data, or `None` if no good match found.
+
+### `resolve_company(name, country=None, **kwargs)`
+
+Full resolution with all details and match scores.
+
+**Parameters**:
+- `name` (str): Company name to resolve
+- `country` (str, optional): ISO 2-letter country code
+- Additional kwargs for advanced options
+
+**Returns**: Dictionary with:
+- `final`: Best matched company
+- `decision`: Decision type ('auto_high_conf', 'llm_tiebreak', etc.)
+- `matches`: List of all potential matches with scores
 
 ### `normalize_name(name)`
 
-Normalize company name for matching.
+Normalize a company name for matching.
 
+**Parameters**:
+- `name` (str): Company name to normalize
+
+**Returns**: Normalized string (lowercase, no punctuation, legal suffixes removed)
+
+### `list_companies(country=None, search=None, limit=None, data_path=None)`
+
+List companies with optional filtering.
+
+**Parameters**:
+- `country` (str, optional): ISO 2-letter country code filter
+- `search` (str, optional): Search term for company names
+- `limit` (int, optional): Maximum number of results
+- `data_path` (str, optional): Path to custom data file
+
+**Returns**: pandas DataFrame with filtered company data
+
+**Examples**:
 ```python
-from entityidentity import normalize_name
-normalize_name("Apple Inc.")  # "apple"
-normalize_name("BHP Group Ltd")  # "bhp group"
+# List all US companies
+us = list_companies(country="US")
+
+# Search for mining companies
+mining = list_companies(search="mining")
+
+# Top 10 Australian companies
+top_au = list_companies(country="AU", limit=10)
 ```
 
-## Testing
+### `load_companies(data_path=None)`
 
-```bash
-# Run all tests
-pytest
+Load full company database into memory.
 
-# Run with coverage
-pytest --cov=entityidentity
+**Parameters**:
+- `data_path` (str, optional): Path to custom data file
 
-# Run only integration tests
-pytest tests/companies/test_loaders.py
-
-# Test with live APIs (slow)
-ENTITYIDENTITY_TEST_LIVE=1 pytest -v -m integration
-```
+**Returns**: pandas DataFrame with all company data
 
 ## Performance
 
-- **In-memory**: <100ms for most queries
-- **With SQLite + FTS5**: Scales to millions of companies
-- **Database size**: ~10-50MB compressed (Parquet)
+- **Query speed**: <100ms for most lookups
+- **Database size**: ~10-50MB (compressed Parquet format)
+- **Memory usage**: ~200-500MB when loaded
 
-## License
+## Advanced Usage
 
-MIT License - see [LICENSE](LICENSE)
+### Use Custom Data
+
+```python
+from entityidentity import load_companies, match_company
+
+# Load your own company data
+df = load_companies("path/to/your/companies.parquet")
+
+# Then use normally
+match = match_company("Company Name")
+```
+
+### List Companies
+
+```python
+from entityidentity import list_companies
+
+# List all companies
+all_companies = list_companies()
+
+# List companies by country
+us_companies = list_companies(country="US")
+au_companies = list_companies(country="AU")
+
+# Search for companies
+mining = list_companies(search="mining")
+tech = list_companies(search="tech")
+
+# Combine filters
+uk_tech = list_companies(country="GB", search="tech", limit=10)
+
+# Access data
+for _, company in uk_tech.iterrows():
+    print(f"{company['name']} - {company['country']}")
+```
+
+### Access Raw Data
+
+```python
+from entityidentity import load_companies
+
+# Get full DataFrame for advanced filtering
+companies = load_companies()
+
+# Custom filtering
+filtered = companies[
+    (companies['country'] == 'US') & 
+    (companies['name_norm'].str.contains('tech'))
+]
+```
+
+## Support
+
+- **Documentation**: See [MAINTENANCE.md](MAINTENANCE.md) for development details
+- **Issues**: Report bugs on GitHub
+- **License**: MIT
 
 ## Author
 

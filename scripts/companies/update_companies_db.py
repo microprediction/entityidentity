@@ -67,7 +67,8 @@ def _write_info_file(info_path: Path, data: pd.DataFrame, args):
         qid_pct = qid_count / len(data) * 100
         f.write(f"  - With Wikidata QID: {qid_count:6,} ({qid_pct:5.1f}%)\n")
         
-        alias_count = data['aliases'].apply(lambda x: len(x) > 0).sum()
+        # Count companies with at least one alias (alias1-alias5)
+        alias_count = data['alias1'].notna().sum()
         alias_pct = alias_count / len(data) * 100
         f.write(f"  - With Aliases:      {alias_count:6,} ({alias_pct:5.1f}%)\n")
         
@@ -92,8 +93,8 @@ def _write_info_file(info_path: Path, data: pd.DataFrame, args):
         csv_path = args.output.with_suffix('.csv')
         if csv_path.exists():
             size_kb = csv_path.stat().st_size / 1024
-            csv_rows = min(500, len(data))
-            f.write(f"  - CSV Preview: {csv_path.name} ({size_kb:.1f} KB, {csv_rows} rows)\n")
+            csv_rows = min(5000, len(data))
+            f.write(f"  - CSV Preview: {csv_path.name} ({size_kb:.1f} KB, up to {csv_rows} rows sampled)\n")
         
         f.write(f"\n")
         f.write("=" * 70 + "\n")
@@ -239,11 +240,15 @@ def main():
         if args.format == 'parquet':
             final_data.to_parquet(args.output, index=False, compression='snappy')
             
-            # Also create a CSV preview with first 500 rows
+            # Also create a CSV preview with random sample of up to 5000 rows
             csv_preview_path = args.output.with_suffix('.csv')
-            preview_rows = min(500, len(final_data))
-            print(f"📄 Creating CSV preview: {csv_preview_path} ({preview_rows} rows)")
-            final_data.head(preview_rows).to_csv(csv_preview_path, index=False)
+            preview_rows = min(5000, len(final_data))
+            print(f"📄 Creating CSV preview: {csv_preview_path} ({preview_rows} rows, randomly sampled)")
+            if len(final_data) > 5000:
+                preview_df = final_data.sample(n=5000, random_state=42)
+            else:
+                preview_df = final_data
+            preview_df.to_csv(csv_preview_path, index=False)
             
             # Create info file with database statistics
             info_path = args.output.parent / 'companies_info.txt'

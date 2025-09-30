@@ -23,3 +23,22 @@ Extract shared code after the **3rd** duplication, not the 2nd.
 - Focus on: **Is this the same knowledge?** not **Does this look similar?**
 
 > "Duplication is far cheaper than the wrong abstraction." - Sandi Metz
+
+
+# Project organization
+
+/scripts 
+     For bash scripts only. All Python inside entityidentity/entityidentity
+
+
+# Deployment 
+
+Ensure that data files in /table are included in the package distribution so people can just pip install and use the package out of the box. 
+
+# Module names
+
+Use hyphens for function names but not module names
+
+e.g. 
+
+  from  companiesfiltered import company_filter 

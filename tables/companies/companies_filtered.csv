@@ -1,0 +1,10 @@
+name,name_norm,country,lei,wikidata_qid,aliases,address,city,postal_code,source
+BHP Group Limited,bhp group,AU,,,['BHP'],,,,ASX
+Rio Tinto Limited,rio tinto,AU,,,['RIO'],,,,ASX
+Fortescue Metals Group Ltd,fortescue metals group,AU,,,['FMG'],,,,ASX
+Newcrest Mining Limited,newcrest mining,AU,,,['NCM'],,,,ASX
+Anglo American plc,anglo american,GB,,,['AAL'],,,,LSE
+Glencore plc,glencore,GB,,,['GLEN'],,,,LSE
+Antofagasta plc,antofagasta,GB,,,['ANTO'],,,,LSE
+Barrick Gold Corporation,barrick gold,CA,,,['ABX'],,,,TSX
+Wheaton Precious Metals Corp.,wheaton precious metals,CA,,,['WPM'],,,,TSX

@@ -1,0 +1,194 @@
+# Company Classifier Configuration
+# This file defines prompts and sector definitions for LLM-based classification
+
+# Categories: Supply-side (producers) and Demand-side (consumers)
+categories:
+  supply:
+    name: "Supply Side - Metal Producers"
+    description: "Companies that extract, process, or recycle metals and minerals"
+    sectors:
+      mining:
+        name: "Mining & Extraction"
+        includes:
+          - "Primary metals mining (copper, iron, aluminum, zinc, lead, nickel, tin)"
+          - "Precious metals (gold, silver, platinum, palladium)"
+          - "Rare earth elements and critical minerals (lithium, cobalt, graphite)"
+          - "Industrial minerals and aggregates"
+          - "Coal mining"
+          - "Quarrying and stone extraction"
+          - "Ore processing, smelting, and refining"
+          - "Mining exploration and development companies"
+          - "Mining royalty and streaming companies"
+      
+      recycling:
+        name: "Metal Recycling & Circular Economy"
+        includes:
+          - "Scrap metal recycling and processing"
+          - "E-waste recycling (electronics, batteries)"
+          - "Automotive recycling and dismantling"
+          - "Industrial waste recycling"
+          - "Metal recovery from waste"
+          - "Secondary metal production"
+          - "Urban mining operations"
+          - "Battery recycling and recovery"
+  
+  demand:
+    name: "Demand Side - Major Metal Consumers"
+    description: "Industries that are significant consumers of metals and minerals"
+    sectors:
+      automotive:
+        name: "Automotive & Transportation"
+        includes:
+          - "Automobile manufacturers (OEMs)"
+          - "Electric vehicle manufacturers"
+          - "Auto parts and components suppliers"
+          - "Commercial vehicle manufacturers"
+          - "Motorcycle and powersports manufacturers"
+          - "Aerospace and aircraft manufacturing"
+          - "Shipbuilding and marine equipment"
+          - "Rail equipment manufacturing"
+      
+      manufacturing:
+        name: "Heavy Manufacturing & Industrial"
+        includes:
+          - "Industrial machinery and equipment"
+          - "Heavy equipment manufacturers"
+          - "Metal fabrication and processing"
+          - "Steel mills and steel products"
+          - "Aluminum products manufacturing"
+          - "Wire and cable manufacturing"
+          - "Industrial tools and fasteners"
+          - "Bearings, gears, and drive systems"
+      
+      construction:
+        name: "Construction & Infrastructure"
+        includes:
+          - "Construction materials manufacturers"
+          - "Structural steel and metal building products"
+          - "Rebar and reinforcement products"
+          - "Roofing and siding materials"
+          - "Plumbing and HVAC equipment"
+          - "Elevators and escalators"
+          - "Heavy construction equipment"
+      
+      electronics:
+        name: "Electronics & Technology"
+        includes:
+          - "Semiconductor manufacturers"
+          - "Electronics components and assemblies"
+          - "Consumer electronics manufacturers"
+          - "Computer and server manufacturers"
+          - "Telecommunications equipment"
+          - "Battery manufacturers (lithium-ion, etc.)"
+          - "Solar panel manufacturers"
+          - "LED and lighting manufacturers"
+      
+      appliances:
+        name: "Appliances & Consumer Goods"
+        includes:
+          - "Home appliance manufacturers"
+          - "Kitchen equipment and cookware"
+          - "HVAC systems for residential"
+          - "Power tools and hand tools"
+          - "Furniture with metal components"
+          - "Consumer electronics"
+
+# Exclusions
+exclusions:
+  - "Pure software/technology companies (unless they manufacture hardware)"
+  - "Financial services, investment firms, consultancies"
+  - "Real estate and property developers (unless they manufacture materials)"
+  - "Retailers and distributors (unless they also manufacture)"
+  - "Service companies without manufacturing operations"
+
+# LLM Prompts
+prompts:
+  system: |
+    You are an expert in metals and materials industry classification.
+    
+    Your task is to classify companies into two categories:
+    1. SUPPLY SIDE: Companies that produce or supply metals (mining, recycling)
+    2. DEMAND SIDE: Companies that are major consumers of metals (automotive, manufacturing, etc.)
+    
+    Classification criteria:
+    - Only classify if metals/minerals are a SIGNIFICANT part of their business (>25% of operations)
+    - For diversified conglomerates: Classify based on their major divisions
+    - Include companies across the entire value chain (extraction → recycling → consumption)
+    - A company can be BOTH supply and demand (e.g., steel mill that also recycles)
+    
+    Be thorough but accurate. Consider:
+    - Primary business activities
+    - Revenue sources
+    - Supply chain position
+    - Material intensity of operations
+    
+    Always respond with valid JSON.
+  
+  user_template: |
+    Classify this company in the metals value chain (supply-side producers OR demand-side consumers).
+    
+    Company Information:
+    - Name: {name}
+    - Country: {country}
+    - Aliases: {aliases}
+    {optional_fields}
+    
+    SUPPLY SIDE (Metal Producers):
+    
+    Mining & Extraction:
+    {mining_definition}
+    
+    Recycling & Circular Economy:
+    {recycling_definition}
+    
+    DEMAND SIDE (Major Metal Consumers):
+    
+    Automotive & Transportation:
+    {automotive_definition}
+    
+    Manufacturing & Industrial:
+    {manufacturing_definition}
+    
+    Construction & Infrastructure:
+    {construction_definition}
+    
+    Electronics & Technology:
+    {electronics_definition}
+    
+    Appliances & Consumer Goods:
+    {appliances_definition}
+    
+    Respond with JSON in this exact format:
+    {{
+        "is_relevant": true or false,
+        "category": "supply" or "demand" or "both" or "neither",
+        "sectors": ["specific sectors from definitions above"],
+        "reasoning": "Brief explanation of classification and position in value chain",
+        "confidence": 0.0 to 1.0,
+        "metal_intensity": "low" or "medium" or "high",
+        "key_activities": ["list", "of", "key", "business", "activities"]
+    }}
+
+# Model configuration
+models:
+  openai:
+    default: "gpt-4o-mini"
+    alternatives:
+      - "gpt-4o"
+      - "gpt-3.5-turbo"
+    max_tokens: 400
+  
+  anthropic:
+    default: "claude-3-haiku-20240307"
+    alternatives:
+      - "claude-3-sonnet-20240229"
+      - "claude-3-opus-20240229"
+    max_tokens: 400
+
+# Classification parameters
+classification:
+  confidence_threshold: 0.7
+  batch_size: 100
+  cache_enabled: true
+  cache_ttl_days: 180
+

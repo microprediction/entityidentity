@@ -102,20 +102,33 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
         raise ImportError("pandas is required. Install with: pip install pandas")
     
     if data_path is None:
-        # Look for companies data in tables/companies directory
-        # Start from package root and go up to find project root
-        pkg_dir = Path(__file__).parent.parent.parent  # Go up to project root
-        tables_dir = pkg_dir / "tables" / "companies"
+        # Look for companies data in package data directory
+        # This works both in development and when installed from PyPI
+        pkg_dir = Path(__file__).parent.parent  # entityidentity package root
+        data_dir = pkg_dir / "data" / "companies"
         
+        # Try package data directory first (works when installed)
         for candidate in ["companies.parquet", "companies.csv"]:
-            candidate_path = tables_dir / candidate
+            candidate_path = data_dir / candidate
             if candidate_path.exists():
                 data_path = str(candidate_path)
                 break
         
+        # Fall back to tables/companies for development
+        if data_path is None:
+            tables_dir = pkg_dir.parent / "tables" / "companies"
+            for candidate in ["companies.parquet", "companies.csv"]:
+                candidate_path = tables_dir / candidate
+                if candidate_path.exists():
+                    data_path = str(candidate_path)
+                    break
+        
         if data_path is None:
             raise FileNotFoundError(
-                f"No companies data found in {tables_dir}. "
+                f"No companies data found.\n"
+                f"Tried:\n"
+                f"  - {data_dir}/companies.{{parquet,csv}}\n"
+                f"  - {tables_dir}/companies.{{parquet,csv}}\n"
                 f"Run: python scripts/companies/update_companies_db.py --use-samples"
             )
     
@@ -130,11 +143,11 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
     if "name_norm" not in df.columns:
         df["name_norm"] = df["name"].map(normalize_name)
     
-    # Ensure aliases is a list
-    if "aliases" not in df.columns:
-        df["aliases"] = [[] for _ in range(len(df))]
-    else:
-        df["aliases"] = df["aliases"].apply(lambda x: x if isinstance(x, list) else [])
+    # Ensure alias columns exist (flat structure instead of lists)
+    for i in range(1, 6):  # alias1 through alias5
+        col = f"alias{i}"
+        if col not in df.columns:
+            df[col] = None
     
     return df
 
@@ -178,17 +191,16 @@ def block_candidates(
         # Check name_norm starts with first token
         name_mask = candidates["name_norm"].str.startswith(first_token)
         
-        # Check any alias starts with first token
-        if "aliases" in candidates.columns:
-            alias_mask = candidates["aliases"].apply(
-                lambda aliases: any(
-                    normalize_name(alias).startswith(first_token) 
-                    for alias in aliases
+        # Check any alias starts with first token (alias1-alias5)
+        alias_mask = pd.Series([False] * len(candidates), index=candidates.index)
+        for i in range(1, 6):
+            alias_col = f"alias{i}"
+            if alias_col in candidates.columns:
+                alias_mask |= candidates[alias_col].notna() & candidates[alias_col].apply(
+                    lambda alias: normalize_name(str(alias)).startswith(first_token) if pd.notna(alias) else False
                 )
-            )
-            combined_mask = name_mask | alias_mask
-        else:
-            combined_mask = name_mask
+        
+        combined_mask = name_mask | alias_mask
         
         if combined_mask.any():
             candidates = candidates[combined_mask]
@@ -243,13 +255,18 @@ def score_candidates(
     scores = process.cdist([query_norm], choices, scorer=fuzz.WRatio)[0]
     df = df.assign(score_primary=scores)
     
-    # Alias score: best alias match
+    # Alias score: best alias match (alias1-alias5)
     alias_scores = []
-    for aliases in df["aliases"].tolist():
+    for idx in range(len(df)):
         best_alias_score = 0
-        for alias in (aliases or []):
-            alias_norm = normalize_name(alias)
-            alias_score = fuzz.WRatio(query_norm, alias_norm)
+        row = df.iloc[idx]
+        for i in range(1, 6):
+            alias_col = f"alias{i}"
+            if alias_col in df.columns:
+                alias = row[alias_col]
+                if pd.notna(alias):
+                    alias_norm = normalize_name(str(alias))
+                    alias_score = fuzz.WRatio(query_norm, alias_norm)
             best_alias_score = max(best_alias_score, alias_score)
         alias_scores.append(best_alias_score)
     df = df.assign(score_alias=alias_scores)
@@ -345,7 +362,7 @@ def resolve_company(
                 "country": row.get("country"),
                 "lei": row.get("lei"),
                 "wikidata_qid": row.get("wikidata_qid"),
-                "aliases": row.get("aliases", []),
+                "aliases": [row.get(f"alias{i}") for i in range(1, 6) if pd.notna(row.get(f"alias{i}"))],
                 "explain": {
                     "name_norm": row["name_norm"],
                     "country_match": bool(row.get("country_match", False)),
@@ -397,11 +414,238 @@ def match_company(name: str, country: Optional[str] = None) -> Optional[Dict[str
     
     Args:
         name: Company name to match
-        country: Optional country code
+        country: Optional country code (e.g., "US", "GB") - helps improve accuracy
         
     Returns:
         Match dict or None if no confident match
+        
+    Note:
+        Country is optional but recommended. When provided, it:
+        - Filters candidates to that country (faster)
+        - Boosts match scores for same-country matches
+        - Reduces false positives from similar names in different countries
     """
     result = resolve_company(name, country=country)
     return result.get("final")
+
+
+def list_companies(
+    country: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: Optional[int] = None,
+    data_path: Optional[str] = None,
+) -> pd.DataFrame:
+    """List companies from the database with optional filtering.
+    
+    Args:
+        country: Optional country code to filter by (e.g., "US", "GB")
+        search: Optional search term to filter company names (case-insensitive)
+        limit: Optional maximum number of companies to return
+        data_path: Optional path to companies data file
+        
+    Returns:
+        DataFrame with company data
+        
+    Examples:
+        >>> # List all companies
+        >>> companies = list_companies()
+        
+        >>> # List US companies
+        >>> us_companies = list_companies(country="US")
+        
+        >>> # Search for mining companies
+        >>> mining = list_companies(search="mining")
+        
+        >>> # Get top 10 Australian companies
+        >>> top_au = list_companies(country="AU", limit=10)
+    """
+    df = load_companies(data_path=data_path)
+    
+    # Filter by country
+    if country:
+        df = df[df['country'] == country.upper()]
+    
+    # Filter by search term
+    if search:
+        search_lower = search.lower()
+        # Search in name and normalized name
+        mask = (
+            df['name'].str.lower().str.contains(search_lower, na=False) |
+            df['name_norm'].str.contains(search_lower, na=False)
+        )
+        df = df[mask]
+    
+    # Apply limit
+    if limit:
+        df = df.head(limit)
+    
+    return df
+
+
+def extract_companies(
+    text: str,
+    country_hint: Optional[str] = None,
+    min_confidence: float = 0.75,
+    data_path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Extract company mentions from text and resolve to canonical identifiers.
+    
+    This function:
+    1. Identifies potential company names in the text (capitalized phrases, legal suffixes)
+    2. Infers country context from the text if not provided
+    3. Attempts to match each candidate to the company database
+    4. Returns matches above the confidence threshold
+    
+    Args:
+        text: Text to extract companies from
+        country_hint: Optional country code to prioritize (e.g., "US", "GB")
+        min_confidence: Minimum match score to include (0.0-1.0, default 0.75)
+        data_path: Optional path to companies data file
+        
+    Returns:
+        List of matched company dictionaries with keys:
+        - mention: Original text mention
+        - name: Canonical company name
+        - country: Company country
+        - lei: Legal Entity Identifier (if available)
+        - score: Match confidence score
+        - context: Surrounding text snippet
+        
+    Examples:
+        >>> text = "Apple and Microsoft are leaders in tech. BHP operates in Australia."
+        >>> companies = extract_companies(text)
+        >>> for co in companies:
+        ...     print(f"{co['mention']} -> {co['name']} ({co['country']})")
+        Apple -> Apple Inc. (US)
+        Microsoft -> Microsoft Corporation (US)
+        BHP -> BHP Group Limited (AU)
+    """
+    if not text:
+        return []
+    
+    # Country name to code mapping
+    COUNTRY_NAMES = {
+        'united states': 'US', 'usa': 'US', 'america': 'US', 'american': 'US',
+        'united kingdom': 'GB', 'uk': 'GB', 'britain': 'GB', 'british': 'GB',
+        'australia': 'AU', 'australian': 'AU',
+        'canada': 'CA', 'canadian': 'CA',
+        'germany': 'DE', 'german': 'DE',
+        'france': 'FR', 'french': 'FR',
+        'japan': 'JP', 'japanese': 'JP',
+        'china': 'CN', 'chinese': 'CN',
+        'india': 'IN', 'indian': 'IN',
+        'brazil': 'BR', 'brazilian': 'BR',
+        'south africa': 'ZA',
+        'switzerland': 'CH', 'swiss': 'CH',
+        'netherlands': 'NL', 'dutch': 'NL',
+        'sweden': 'SE', 'swedish': 'SE',
+        'norway': 'NO', 'norwegian': 'NO',
+        'denmark': 'DK', 'danish': 'DK',
+        'spain': 'ES', 'spanish': 'ES',
+        'italy': 'IT', 'italian': 'IT',
+    }
+    
+    # Infer country from text if not provided
+    inferred_countries = []
+    if not country_hint:
+        text_lower = text.lower()
+        for country_name, code in COUNTRY_NAMES.items():
+            if country_name in text_lower:
+                inferred_countries.append(code)
+        # Use most common inferred country if found
+        if inferred_countries:
+            country_hint = max(set(inferred_countries), key=inferred_countries.count)
+    
+    # Extract potential company names
+    # Look for:
+    # 1. Capitalized phrases (2-6 words)
+    # 2. Phrases with legal suffixes (Inc., Ltd, Corp, etc.)
+    # 3. Single capitalized words that might be brand names
+    
+    candidates = []
+    
+    # Pattern 1: Phrases with legal suffixes
+    legal_pattern = re.compile(
+        r'\b([A-Z][A-Za-z0-9&\-]+(?:\s+[A-Z][A-Za-z0-9&\-]+)*)\s+(Inc\.?|Ltd\.?|Corp\.?|Corporation|Limited|Company|plc|LLC|L\.L\.C\.)\b',
+        re.IGNORECASE
+    )
+    for match in legal_pattern.finditer(text):
+        full_match = match.group(0)
+        start = match.start()
+        end = match.end()
+        context = text[max(0, start-30):min(len(text), end+30)]
+        candidates.append({
+            'mention': full_match.strip(),
+            'start': start,
+            'end': end,
+            'context': context.strip()
+        })
+    
+    # Pattern 2: Capitalized phrases (2-4 consecutive capitalized words)
+    cap_pattern = re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b')
+    for match in cap_pattern.finditer(text):
+        mention = match.group(0)
+        start = match.start()
+        end = match.end()
+        
+        # Skip if already captured by legal suffix pattern
+        if any(c['start'] <= start < c['end'] or c['start'] < end <= c['end'] for c in candidates):
+            continue
+        
+        # Skip common words that aren't companies
+        skip_words = {'The', 'This', 'That', 'These', 'Those', 'There', 'When', 'Where', 'What', 'Which'}
+        if mention.split()[0] in skip_words:
+            continue
+        
+        context = text[max(0, start-30):min(len(text), end+30)]
+        candidates.append({
+            'mention': mention,
+            'start': start,
+            'end': end,
+            'context': context.strip()
+        })
+    
+    # Deduplicate overlapping candidates (keep longer ones)
+    filtered_candidates = []
+    for candidate in sorted(candidates, key=lambda x: (x['start'], -(x['end'] - x['start']))):
+        if not any(
+            c['start'] <= candidate['start'] < c['end'] or 
+            c['start'] < candidate['end'] <= c['end']
+            for c in filtered_candidates
+        ):
+            filtered_candidates.append(candidate)
+    
+    # Try to match each candidate
+    results = []
+    seen = set()  # Avoid duplicates
+    
+    for candidate in filtered_candidates:
+        mention = candidate['mention']
+        
+        # Try to match with country hint
+        result = resolve_company(mention, country=country_hint, data_path=data_path)
+        
+        if result['final'] and result['final']['score'] >= min_confidence:
+            company = result['final']
+            
+            # Deduplicate by company name
+            if company['name'] in seen:
+                continue
+            seen.add(company['name'])
+            
+            results.append({
+                'mention': mention,
+                'name': company['name'],
+                'country': company.get('country'),
+                'lei': company.get('lei'),
+                'wikidata_qid': company.get('wikidata_qid'),
+                'score': company['score'],
+                'context': candidate['context'],
+                'decision': result['decision'],
+            })
+    
+    # Sort by position in text
+    results.sort(key=lambda x: text.index(x['mention']))
+    
+    return results
 

@@ -1,0 +1,12 @@
+# Ignore large data files but keep the directory structure
+*.parquet
+*.parquet.bak
+
+# Keep CSV previews and info files (small, useful for inspection)
+# *.csv
+# companies_info.txt
+
+# Keep README
+!README.md
+!.gitignore
+

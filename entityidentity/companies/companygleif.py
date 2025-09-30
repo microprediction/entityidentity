@@ -17,9 +17,10 @@ from pathlib import Path
 import pandas as pd
 
 
-# GLEIF concatenated file endpoints
-GLEIF_LEVEL1_URL = "https://goldencopy.gleif.org/api/v2/golden-copies/publishes/lei2/latest/download"
-GLEIF_LEVEL2_URL = "https://goldencopy.gleif.org/api/v2/golden-copies/publishes/rr/latest/download"
+# GLEIF API endpoints
+GLEIF_API_BASE = "https://api.gleif.org/api/v1"
+GLEIF_LEI_RECORDS_URL = f"{GLEIF_API_BASE}/lei-records"
+GLEIF_RATE_LIMIT = 60  # requests per minute
 
 
 def load_gleif_lei(
@@ -27,15 +28,12 @@ def load_gleif_lei(
     level: int = 1,
     max_records: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Load GLEIF LEI data.
-    
-    Level 1: Basic entity data (name, address, status, registration)
-    Level 2: Relationship data (parent-child, branches)
+    """Load GLEIF LEI data via REST API.
     
     Args:
         cache_dir: Directory to cache downloaded files
-        level: 1 for entity data, 2 for relationships
-        max_records: Limit number of records (for testing)
+        level: 1 for entity data (only level 1 currently supported)
+        max_records: Limit number of records (for testing). Default 10,000.
         
     Returns:
         DataFrame with columns:
@@ -46,56 +44,113 @@ def load_gleif_lei(
         - city: City
         - postal_code: Postal/ZIP code
         - status: LEI status (ISSUED, LAPSED, etc.)
-        - registration_authority: Local registration authority
-        - registration_id: Local registration number
         
     Raises:
-        requests.HTTPError: If download fails
+        requests.HTTPError: If API request fails
         
     Note:
-        The full dataset is ~3GB compressed, ~30GB uncompressed.
-        Contains ~2.5M active entities globally.
-        This function downloads the CSV format for easier parsing.
+        The full dataset contains ~3M active entities globally.
+        This function uses the GLEIF REST API with pagination.
+        Rate limit: 60 requests per minute.
     """
+    import time
+    from tqdm import tqdm
+    
+    if level != 1:
+        raise NotImplementedError("Only level 1 (basic entity data) is currently supported")
+    
     if cache_dir:
         cache_path = Path(cache_dir)
         cache_path.mkdir(parents=True, exist_ok=True)
-        cached_file = cache_path / f"gleif_level{level}.csv"
+        cached_file = cache_path / f"gleif_lei_{max_records or 'all'}.parquet"
         if cached_file.exists():
-            df = pd.read_csv(cached_file, nrows=max_records)
+            print(f"Loading from cache: {cached_file}")
+            df = pd.read_parquet(cached_file)
+            if max_records:
+                df = df.head(max_records)
             return df
     
-    # Download GLEIF data
-    url = GLEIF_LEVEL1_URL if level == 1 else GLEIF_LEVEL2_URL
+    # Set default max_records
+    if max_records is None:
+        max_records = 10000
     
-    print(f"Downloading GLEIF Level {level} data from {url}...")
-    print("This may take several minutes (file is ~3GB)...")
+    print(f"Fetching {max_records:,} LEI records from GLEIF API...")
+    print(f"API: {GLEIF_LEI_RECORDS_URL}")
     
-    response = requests.get(url, stream=True, timeout=300)
-    response.raise_for_status()
+    # Fetch paginated data
+    page_size = 200  # Max records per request
+    num_pages = (max_records + page_size - 1) // page_size
     
-    # The file is a ZIP containing CSV or XML
-    # For simplicity, we'll expect CSV format
-    with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
-        # Find the CSV file in the archive
-        csv_files = [f for f in zf.namelist() if f.endswith('.csv')]
-        if not csv_files:
-            raise ValueError("No CSV file found in GLEIF archive")
+    all_records = []
+    for page_num in tqdm(range(1, num_pages + 1), desc="Fetching pages"):
+        params = {
+            'page[number]': page_num,
+            'page[size]': min(page_size, max_records - len(all_records)),
+        }
         
-        with zf.open(csv_files[0]) as csv_file:
-            df = pd.read_csv(csv_file, nrows=max_records)
+        try:
+            response = requests.get(GLEIF_LEI_RECORDS_URL, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract records from JSON API format
+            if 'data' in data:
+                all_records.extend(data['data'])
+            
+            if len(all_records) >= max_records:
+                break
+                
+            # Respect rate limiting (60 req/min = 1 req per second)
+            time.sleep(1.1)
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Warning: Failed to fetch page {page_num}: {e}")
+            if len(all_records) == 0:
+                raise
+            break
     
-    # Normalize column names (GLEIF uses specific column names)
-    # This is a simplified mapping - actual GLEIF format may vary
-    if level == 1:
-        df = _normalize_gleif_level1(df)
+    print(f"Fetched {len(all_records):,} records")
+    
+    # Parse JSON records into DataFrame
+    df = _parse_gleif_json(all_records)
     
     # Cache if requested
     if cache_dir and cached_file:
-        df.to_csv(cached_file, index=False)
+        df.to_parquet(cached_file, index=False)
         print(f"Cached to {cached_file}")
     
     return df
+
+
+def _parse_gleif_json(records: List[Dict]) -> pd.DataFrame:
+    """Parse GLEIF JSON API records into DataFrame.
+    
+    Args:
+        records: List of JSON records from GLEIF API
+        
+    Returns:
+        DataFrame with normalized columns
+    """
+    rows = []
+    for record in records:
+        attrs = record.get('attributes', {})
+        entity = attrs.get('entity', {})
+        registration = attrs.get('registration', {})
+        legal_addr = entity.get('legalAddress', {})
+        
+        # Extract data
+        row = {
+            'lei': attrs.get('lei'),
+            'name': entity.get('legalName', {}).get('name'),
+            'country': legal_addr.get('country'),
+            'city': legal_addr.get('city'),
+            'postal_code': legal_addr.get('postalCode'),
+            'address': ' '.join(legal_addr.get('addressLines', [])).strip() or None,
+            'status': entity.get('status'),
+        }
+        rows.append(row)
+    
+    return pd.DataFrame(rows)
 
 
 def _normalize_gleif_level1(df: pd.DataFrame) -> pd.DataFrame:

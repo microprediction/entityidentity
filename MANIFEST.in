@@ -2,7 +2,6 @@ include README.md
 include LICENSE
 include requirements.txt
 
-# Include data tables
-recursive-include tables *.parquet *.csv *.txt
-recursive-include tables/companies *.parquet *.csv *.txt README.md
+# Include package data files
+recursive-include entityidentity/data *.parquet *.csv *.txt README.md
 

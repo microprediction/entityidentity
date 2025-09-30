@@ -15,7 +15,12 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        '': ['tables/companies/*.parquet', 'tables/companies/*.csv', 'tables/companies/*.txt'],
+        'entityidentity': [
+            'data/companies/*.parquet',
+            'data/companies/*.csv',
+            'data/companies/*.txt',
+            'data/companies/README.md',
+        ],
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -28,6 +33,8 @@ setup(
         "rapidfuzz>=2.0.0",
         "pyarrow>=10.0.0",
         "requests>=2.25.0",
+        "tqdm>=4.0.0",
+        "pyyaml>=6.0.0",
     ],
     extras_require={
         "dev": ["pytest>=7.0.0"],
