@@ -1,0 +1,25 @@
+# Lenient DRY Principle
+
+Apply DRY pragmatically - avoid duplication that creates maintenance burden, but allow repetition when it improves clarity.
+
+## Rule of Three
+Extract shared code after the **3rd** duplication, not the 2nd.
+
+## Extract when:
+- Same logic appears 3+ times
+- Represents a clear business concept
+- Changes would need to happen everywhere simultaneously
+- Abstraction would be simple and intuitive
+
+## Don't force DRY when:
+- Similar code represents different concepts (duplication of structure ≠ duplication of knowledge)
+- Abstraction would be harder to understand than repetition
+- Different parts need to evolve independently
+- Tests, config, or examples (clarity trumps DRY)
+
+## Key Principles
+- **Clarity > Conciseness**: Confusing abstraction < duplication
+- **Wrong Abstraction > Duplication**: Bad abstractions are harder to fix than duplication
+- Focus on: **Is this the same knowledge?** not **Does this look similar?**
+
+> "Duplication is far cheaper than the wrong abstraction." - Sandi Metz

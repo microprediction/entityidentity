@@ -1,0 +1,4 @@
+"""Entity Identity - Ontology / Entity Resolution"""
+
+__version__ = "0.0.1"
+

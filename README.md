@@ -1,2 +1,2 @@
-# entityidentity
-Out of the box canonical entity
+# ontology
+Ontology / Entity Resolution
