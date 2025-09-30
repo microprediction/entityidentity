@@ -20,5 +20,8 @@ setup(
     ],
     python_requires=">=3.7",
     install_requires=[],
+    extras_require={
+        "dev": ["pytest>=7.0.0"],
+    },
 )
 
