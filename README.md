@@ -1,4 +1,8 @@
 # EntityIdentity
+[![Tests](https://github.com/microprediction/entityidentity-installtest/actions/workflows/tests_312.yml/badge.svg)](https://github.com/microprediction/entityidentity-installtest/actions/workflows/tests_312.yml)
+[![Python](https://img.shields.io/badge/python-3.8+-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)]()
+
 
 Entity resolution and identity matching for companies.
 
