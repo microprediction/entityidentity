@@ -4,6 +4,7 @@ import re
 from typing import List, Optional, Dict, Any
 
 from entityidentity.companies.companyidentity import resolve_company, load_companies
+from entityidentity.countries import country_identifier
 
 
 def extract_companies_from_text(
@@ -12,54 +13,59 @@ def extract_companies_from_text(
     min_confidence: float = 0.75,
 ) -> List[Dict[str, Any]]:
     """Extract company mentions from text and resolve to canonical identifiers.
-    
+
     This function:
     1. Identifies potential company names (capitalized phrases, legal suffixes)
     2. Infers country context from the text if not provided
     3. Attempts to match each candidate to the company database
     4. Returns matches above the confidence threshold
-    
+
     Args:
         text: Text to extract companies from
         country_hint: Optional country code to prioritize (e.g., "US", "GB")
         min_confidence: Minimum match score to include (0.0-1.0, default 0.75)
-        
+
     Returns:
         List of matched company dictionaries
     """
     if not text:
         return []
-    
-    # Country name to code mapping
-    COUNTRY_NAMES = {
-        'united states': 'US', 'usa': 'US', 'america': 'US', 'american': 'US',
-        'united kingdom': 'GB', 'uk': 'GB', 'britain': 'GB', 'british': 'GB',
-        'australia': 'AU', 'australian': 'AU',
-        'canada': 'CA', 'canadian': 'CA',
-        'germany': 'DE', 'german': 'DE',
-        'france': 'FR', 'french': 'FR',
-        'japan': 'JP', 'japanese': 'JP',
-        'china': 'CN', 'chinese': 'CN',
-        'india': 'IN', 'indian': 'IN',
-        'brazil': 'BR', 'brazilian': 'BR',
-        'south africa': 'ZA',
-        'switzerland': 'CH', 'swiss': 'CH',
-        'netherlands': 'NL', 'dutch': 'NL',
-        'sweden': 'SE', 'swedish': 'SE',
-        'norway': 'NO', 'norwegian': 'NO',
-        'denmark': 'DK', 'danish': 'DK',
-        'spain': 'ES', 'spanish': 'ES',
-        'italy': 'IT', 'italian': 'IT',
-    }
-    
+
     # Infer country from text if not provided
     if not country_hint:
+        # List of common country names/adjectives to look for
+        country_terms = [
+            'united states', 'usa', 'america', 'american',
+            'united kingdom', 'uk', 'britain', 'british', 'england',
+            'australia', 'australian',
+            'canada', 'canadian',
+            'germany', 'german',
+            'france', 'french',
+            'japan', 'japanese',
+            'china', 'chinese',
+            'india', 'indian',
+            'brazil', 'brazilian',
+            'south africa', 'south african',
+            'switzerland', 'swiss',
+            'netherlands', 'dutch', 'holland',
+            'sweden', 'swedish',
+            'norway', 'norwegian',
+            'denmark', 'danish',
+            'spain', 'spanish',
+            'italy', 'italian',
+        ]
+
         text_lower = text.lower()
         inferred_countries = []
-        for country_name, code in COUNTRY_NAMES.items():
-            if country_name in text_lower:
-                inferred_countries.append(code)
+        for term in country_terms:
+            if term in text_lower:
+                # Use the robust country_identifier to get ISO2 code
+                code = country_identifier(term)
+                if code:
+                    inferred_countries.append(code)
+
         if inferred_countries:
+            # Use the most common inferred country
             country_hint = max(set(inferred_countries), key=inferred_countries.count)
     
     # Extract candidate company names
