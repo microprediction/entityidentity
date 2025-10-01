@@ -1,0 +1,280 @@
+name: Validate Metals YAML and Build Parquet
+
+on:
+  push:
+    paths:
+      - 'entityidentity/metals/data/metals.yaml'
+      - 'entityidentity/metals/data/supply_chain_clusters.yaml'
+      - 'entityidentity/metals/data/build_metals.py'
+      - '.github/workflows/validate_metals.yml'
+  pull_request:
+    paths:
+      - 'entityidentity/metals/data/metals.yaml'
+      - 'entityidentity/metals/data/supply_chain_clusters.yaml'
+      - 'entityidentity/metals/data/build_metals.py'
+  workflow_dispatch:
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyyaml pandas pyarrow jsonschema
+
+    - name: Validate YAML syntax
+      run: |
+        python -c "
+        import yaml
+        import sys
+
+        files = [
+            'entityidentity/metals/data/metals.yaml',
+            'entityidentity/metals/data/supply_chain_clusters.yaml'
+        ]
+
+        for file in files:
+            print(f'Validating {file}...')
+            try:
+                with open(file, 'r') as f:
+                    yaml.safe_load(f)
+                print(f'  ✅ {file} is valid YAML')
+            except yaml.YAMLError as e:
+                print(f'  ❌ {file} has YAML errors:')
+                print(e)
+                sys.exit(1)
+        "
+
+    - name: Validate metals.yaml schema
+      run: |
+        python -c "
+        import yaml
+        import sys
+
+        with open('entityidentity/metals/data/metals.yaml', 'r') as f:
+            data = yaml.safe_load(f)
+
+        # Check required fields
+        if 'version' not in data:
+            print('❌ Missing version field')
+            sys.exit(1)
+
+        if 'metals' not in data:
+            print('❌ Missing metals field')
+            sys.exit(1)
+
+        required_fields = ['name', 'metal_key', 'category_bucket']
+        optional_fields = [
+            'symbol', 'formula', 'code', 'cluster_id',
+            'default_unit', 'default_basis', 'hs6', 'pra_hint',
+            'aliases', 'notes', 'sources'
+        ]
+
+        print(f'Validating {len(data[\"metals\"])} metals...')
+
+        for i, metal in enumerate(data['metals']):
+            # Check required fields
+            for field in required_fields:
+                if field not in metal:
+                    print(f'❌ Metal {i} missing required field: {field}')
+                    sys.exit(1)
+
+            # Validate category_bucket values
+            valid_categories = [
+                'precious', 'pgm', 'base', 'battery', 'ree',
+                'ferroalloy', 'specialty', 'industrial'
+            ]
+            if metal.get('category_bucket') not in valid_categories:
+                print(f'❌ Metal {metal[\"name\"]} has invalid category: {metal.get(\"category_bucket\")}')
+                print(f'   Valid categories: {valid_categories}')
+                sys.exit(1)
+
+            # Validate aliases is a list if present
+            if 'aliases' in metal and not isinstance(metal['aliases'], list):
+                print(f'❌ Metal {metal[\"name\"]} aliases must be a list')
+                sys.exit(1)
+
+            # Validate sources is a list if present
+            if 'sources' in metal and not isinstance(metal['sources'], list):
+                print(f'❌ Metal {metal[\"name\"]} sources must be a list')
+                sys.exit(1)
+
+        print('✅ All metals have valid schema')
+        "
+
+    - name: Validate supply chain clusters
+      run: |
+        python -c "
+        import yaml
+
+        with open('entityidentity/metals/data/supply_chain_clusters.yaml', 'r') as f:
+            data = yaml.safe_load(f)
+
+        if 'clusters' not in data:
+            print('❌ Missing clusters field')
+            sys.exit(1)
+
+        print(f'✅ Found {len(data[\"clusters\"])} supply chain clusters')
+
+        # Load metals and check cluster references
+        with open('entityidentity/metals/data/metals.yaml', 'r') as f:
+            metals = yaml.safe_load(f)
+
+        used_clusters = set()
+        for metal in metals['metals']:
+            if metal.get('cluster_id'):
+                used_clusters.add(metal['cluster_id'])
+
+        undefined_clusters = used_clusters - set(data['clusters'].keys())
+        if undefined_clusters:
+            print(f'❌ Undefined clusters referenced: {undefined_clusters}')
+            sys.exit(1)
+
+        print('✅ All cluster references are valid')
+        "
+
+    - name: Check for duplicate metal_key values
+      run: |
+        python -c "
+        import yaml
+        import sys
+
+        with open('entityidentity/metals/data/metals.yaml', 'r') as f:
+            data = yaml.safe_load(f)
+
+        metal_keys = {}
+        for metal in data['metals']:
+            key = metal['metal_key']
+            if key in metal_keys:
+                print(f'❌ Duplicate metal_key: {key}')
+                print(f'   Used by: {metal_keys[key]} and {metal[\"name\"]}')
+                sys.exit(1)
+            metal_keys[key] = metal['name']
+
+        print(f'✅ All {len(metal_keys)} metal_key values are unique')
+        "
+
+    - name: Build metals.parquet
+      run: |
+        cd entityidentity/metals/data
+        python build_metals.py
+
+    - name: Verify parquet output
+      run: |
+        python -c "
+        import pandas as pd
+        import sys
+
+        try:
+            df = pd.read_parquet('entityidentity/metals/data/metals.parquet')
+            print(f'✅ Successfully built metals.parquet')
+            print(f'   Rows: {len(df)}')
+            print(f'   Columns: {len(df.columns)}')
+
+            # Check for required columns
+            required_cols = [
+                'metal_id', 'metal_key', 'name', 'name_norm',
+                'category_bucket', 'default_unit', 'default_basis'
+            ]
+
+            missing = set(required_cols) - set(df.columns)
+            if missing:
+                print(f'❌ Missing required columns: {missing}')
+                sys.exit(1)
+
+            print('✅ All required columns present')
+
+        except Exception as e:
+            print(f'❌ Failed to read metals.parquet: {e}')
+            sys.exit(1)
+        "
+
+    - name: Upload parquet as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: metals-parquet
+        path: entityidentity/metals/data/metals.parquet
+
+    - name: Generate validation report
+      run: |
+        python -c "
+        import yaml
+        import pandas as pd
+        import json
+
+        # Load YAML data
+        with open('entityidentity/metals/data/metals.yaml', 'r') as f:
+            yaml_data = yaml.safe_load(f)
+
+        with open('entityidentity/metals/data/supply_chain_clusters.yaml', 'r') as f:
+            clusters = yaml.safe_load(f)
+
+        # Load parquet
+        df = pd.read_parquet('entityidentity/metals/data/metals.parquet')
+
+        # Generate report
+        report = {
+            'yaml_metals': len(yaml_data['metals']),
+            'parquet_rows': len(df),
+            'clusters': len(clusters['clusters']),
+            'categories': df['category_bucket'].value_counts().to_dict(),
+            'clusters_used': df['cluster_id'].value_counts().to_dict()
+        }
+
+        print('📊 Validation Report')
+        print('=' * 50)
+        print(f'YAML metals: {report[\"yaml_metals\"]}')
+        print(f'Parquet rows: {report[\"parquet_rows\"]}')
+        print(f'Clusters defined: {report[\"clusters\"]}')
+        print(f'\\nMetals by category:')
+        for cat, count in report['categories'].items():
+            print(f'  {cat:12} : {count:3}')
+        print(f'\\nMetals by cluster:')
+        for cluster, count in report['clusters_used'].items():
+            if cluster:  # Skip None/empty
+                print(f'  {cluster:25} : {count:3}')
+
+        # Save report as JSON
+        with open('validation_report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+        "
+
+    - name: Comment PR with validation results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('validation_report.json', 'utf8'));
+
+          const comment = `## 🔍 Metals YAML Validation Results
+
+          ✅ **All validations passed!**
+
+          ### 📊 Statistics
+          - **Total metals**: ${report.yaml_metals}
+          - **Parquet rows**: ${report.parquet_rows}
+          - **Clusters defined**: ${report.clusters}
+
+          ### 📂 Categories
+          ${Object.entries(report.categories).map(([cat, count]) => `- ${cat}: ${count}`).join('\n')}
+
+          ### 🔗 Cluster Usage
+          ${Object.entries(report.clusters_used).filter(([k, v]) => k).map(([cluster, count]) => `- ${cluster}: ${count}`).join('\n')}
+          `;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
