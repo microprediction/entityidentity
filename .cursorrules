@@ -42,3 +42,8 @@ Use hyphens for function names but not module names
 e.g. 
 
   from  companiesfiltered import company_filter 
+
+
+# External APIs
+
+ - Use backoff if necessary

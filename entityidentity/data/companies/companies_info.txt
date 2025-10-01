@@ -2,15 +2,25 @@
 Company Database Information
 ======================================================================
 
-Generated: 2025-09-30 18:52:37
+Generated: 2025-10-01 04:02:49
 Filter: Mining and Energy Companies (LLM-filtered)
 
-Total Companies: 9
+Total Companies: 666
 
 Breakdown by Country (Top 10):
-  - AU   :      4 companies ( 44.4%)
-  - GB   :      3 companies ( 33.3%)
-  - CA   :      2 companies ( 22.2%)
+  - IN   :    412 companies ( 61.9%)
+  - IT   :     33 companies (  5.0%)
+  - DE   :     23 companies (  3.5%)
+  - US   :     21 companies (  3.2%)
+  - FR   :     19 companies (  2.9%)
+  - ES   :     17 companies (  2.6%)
+  - CA   :     15 companies (  2.3%)
+  - AU   :     15 companies (  2.3%)
+  - CN   :     10 companies (  1.5%)
+  - GB   :     10 companies (  1.5%)
 
 Data Coverage:
-  - With LEI: 0 (0.0%)
+  - With LEI: 656 (98.5%)
+  - With Aliases: 11 (1.7%)
+
+======================================================================

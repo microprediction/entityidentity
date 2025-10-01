@@ -6,6 +6,7 @@ if companies belong to mining or energy sectors.
 
 import json
 import os
+import time
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -83,17 +84,25 @@ def classify_company_openai(
         appliances_definition=appliances_def
     )
     
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": config['prompts']['system']},
-            {"role": "user", "content": user_prompt}
-        ],
-        response_format={"type": "json_object"},
-        max_tokens=config['models']['openai'].get('max_tokens', 400),
-    )
+    start_time = time.time()
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": config['prompts']['system']},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=config['models']['openai'].get('max_tokens', 400),
+        )
+        elapsed = time.time() - start_time
+    except Exception as e:
+        elapsed = time.time() - start_time
+        # Re-raise with timing info
+        raise type(e)(f"{str(e)} (after {elapsed:.1f}s)") from e
     
     result = json.loads(response.choices[0].message.content)
+    result['_api_time'] = elapsed
     return (
         result['is_relevant'],
         result.get('category', 'neither'),
@@ -156,20 +165,28 @@ def classify_company_anthropic(
         appliances_definition=appliances_def
     )
     
-    response = client.messages.create(
-        model=model,
-        max_tokens=config['models']['anthropic'].get('max_tokens', 400),
-        system=config['prompts']['system'],
-        messages=[
-            {"role": "user", "content": user_prompt}
-        ]
-    )
+    start_time = time.time()
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=config['models']['anthropic'].get('max_tokens', 400),
+            system=config['prompts']['system'],
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+        elapsed = time.time() - start_time
+    except Exception as e:
+        elapsed = time.time() - start_time
+        # Re-raise with timing info
+        raise type(e)(f"{str(e)} (after {elapsed:.1f}s)") from e
     
     content = response.content[0].text
     # Extract JSON from response
     start = content.find('{')
     end = content.rfind('}') + 1
     result = json.loads(content[start:end])
+    result['_api_time'] = elapsed
     
     return (
         result['is_relevant'],
@@ -259,6 +276,8 @@ def filter_companies_llm(
     
     results = []
     processed = 0
+    api_times = []  # Track API response times
+    slow_requests = 0  # Count of slow requests (potential rate limiting)
     
     for idx, row in tqdm(df.iterrows(), total=len(df)):
         # Create cache key
@@ -280,9 +299,12 @@ def filter_companies_llm(
             }
             
             try:
+                # Measure API call time
+                request_start = time.time()
                 is_relevant, category, reasoning, confidence, metal_intensity, key_activities = classify_fn(
                     company_info, model, client, config
                 )
+                api_time = time.time() - request_start
                 
                 # Cache result
                 cache[cache_key] = {
@@ -295,14 +317,35 @@ def filter_companies_llm(
                     'timestamp': datetime.now().isoformat()
                 }
                 
-                # Save cache periodically
+                # Track API response time
+                api_times.append(api_time)
+                
+                # Detect slow requests (potential rate limiting/backoff)
+                if api_time > 5.0:
+                    slow_requests += 1
+                    tqdm.write(f"⚠️  Slow request detected: {api_time:.1f}s for {row['name'][:30]} (rate limit?)")
+                
+                # Save cache periodically with diagnostics
                 processed += 1
                 if processed % batch_size == 0:
                     save_cache(cache, cache_file)
-                    print(f"\nSaved {len(cache)} classifications to cache")
+                    avg_time = sum(api_times[-batch_size:]) / min(batch_size, len(api_times))
+                    recent_slow = sum(1 for t in api_times[-batch_size:] if t > 5.0)
+                    tqdm.write(f"\n📊 Batch stats (last {batch_size}):")
+                    tqdm.write(f"   Avg API time: {avg_time:.2f}s")
+                    tqdm.write(f"   Slow requests: {recent_slow} (>{5}s, possible rate limiting)")
+                    tqdm.write(f"   Cached: {len(cache):,} classifications")
                 
             except Exception as e:
-                print(f"\nError classifying {row['name']}: {e}")
+                error_msg = str(e)
+                tqdm.write(f"\n❌ Error classifying {row['name']}: {error_msg}")
+                
+                # Check for rate limit errors
+                if 'rate_limit' in error_msg.lower() or '429' in error_msg:
+                    tqdm.write(f"🔴 RATE LIMIT detected - API is throttling requests!")
+                elif 'timeout' in error_msg.lower():
+                    tqdm.write(f"🔴 TIMEOUT detected - API response taking too long!")
+                
                 is_relevant = False
                 confidence = 0.0
                 category = 'neither'
@@ -315,6 +358,16 @@ def filter_companies_llm(
     
     # Save final cache
     save_cache(cache, cache_file)
+    
+    # Print API timing statistics
+    if api_times:
+        print(f"\n📊 API Performance Statistics:")
+        print(f"   Total API calls: {len(api_times):,}")
+        print(f"   Avg response time: {sum(api_times)/len(api_times):.2f}s")
+        print(f"   Min/Max: {min(api_times):.2f}s / {max(api_times):.2f}s")
+        print(f"   Slow requests (>5s): {slow_requests} ({slow_requests/len(api_times)*100:.1f}%)")
+        if slow_requests > len(api_times) * 0.1:
+            print(f"   ⚠️  High rate of slow requests - likely experiencing rate limiting!")
     
     # Filter dataframe
     filtered = df.loc[results].copy()
