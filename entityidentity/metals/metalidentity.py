@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     raise ImportError("rapidfuzz not installed. pip install rapidfuzz") from e
 
-from entityidentity.metals.metalnormalize import normalize_name
+from entityidentity.metals.metalnormalize import normalize_metal_name
 
 
 # ---- Helper: Parse "metal:form" hints ----
@@ -76,7 +76,7 @@ def _get_aliases(row: pd.Series) -> list[str]:
     for i in range(1, 11):  # alias1 through alias10
         col = f"alias{i}"
         if col in row.index and pd.notna(row[col]) and str(row[col]).strip():
-            aliases.append(normalize_name(str(row[col])))
+            aliases.append(normalize_metal_name(str(row[col])))
     return aliases
 
 
@@ -136,7 +136,7 @@ def _build_candidate_pool(
 
     # Step 5: Form hint filter (if provided via "metal:form" syntax)
     if form_hint is not None:
-        form_norm = normalize_name(form_hint)
+        form_norm = normalize_metal_name(form_hint)
         # Filter to rows where name_norm contains the form hint
         candidates = candidates[
             candidates["name_norm"].str.contains(form_norm, case=False, na=False)
@@ -218,7 +218,7 @@ def resolve_metal(
 
     # Parse "metal:form" hints
     metal_part, form_hint = _parse_metal_form_hint(str(name))
-    query_norm = normalize_name(metal_part)
+    query_norm = normalize_metal_name(metal_part)
 
     if not query_norm:
         return None
@@ -293,7 +293,7 @@ def topk_matches(
 
     # Parse "metal:form" hints
     metal_part, form_hint = _parse_metal_form_hint(str(name))
-    query_norm = normalize_name(metal_part)
+    query_norm = normalize_metal_name(metal_part)
 
     if not query_norm:
         return []
@@ -311,7 +311,7 @@ def topk_matches(
 
     # Apply form hint if provided
     if form_hint is not None:
-        form_norm = normalize_name(form_hint)
+        form_norm = normalize_metal_name(form_hint)
         candidates = candidates[
             candidates["name_norm"].str.contains(form_norm, case=False, na=False)
         ]

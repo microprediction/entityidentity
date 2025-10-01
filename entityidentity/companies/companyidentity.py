@@ -14,7 +14,7 @@ import pandas as pd
 
 from entityidentity.companies.companynormalize import (
     LEGAL_RE,
-    normalize_name,
+    normalize_company_name,
 )
 from entityidentity.companies.companyblocking import block_candidates
 from entityidentity.companies.companyscoring import score_candidates
@@ -27,7 +27,7 @@ from entityidentity.companies.companyresolver import (
 
 __all__ = [
     'LEGAL_RE',
-    'normalize_name',
+    'normalize_company_name',
     'block_candidates',
     'score_candidates',
     'load_companies',
@@ -35,5 +35,8 @@ __all__ = [
     'match_company',
     'list_companies',
 ]
+
+# Backwards compatibility alias
+normalize_name = normalize_company_name
 
  

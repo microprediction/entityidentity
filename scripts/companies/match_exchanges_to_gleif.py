@@ -25,7 +25,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from entityidentity.companies.companyexchanges import load_asx, load_lse, load_tsx
-from entityidentity.companies.companynormalize import canonicalize_name
+from entityidentity.companies.companynormalize import canonicalize_company_name
 from rapidfuzz import fuzz, process
 
 
@@ -105,7 +105,7 @@ def fuzzy_match_to_gleif(exchange_df, gleif_df, threshold=85):
         lookup = {}
         for idx, row in country_df.iterrows():
             if isinstance(row.get('name'), str):
-                canon = canonicalize_name(row['name']).lower()
+                canon = canonicalize_company_name(row['name']).lower()
                 lookup[canon] = idx
         gleif_by_country[country] = {
             'df': country_df,
@@ -136,7 +136,7 @@ def fuzzy_match_to_gleif(exchange_df, gleif_df, threshold=85):
             continue
         
         # Canonicalize exchange name
-        ex_canon = canonicalize_name(ex_name).lower()
+        ex_canon = canonicalize_company_name(ex_name).lower()
         
         # Try exact match first
         gleif_idx = country_data['lookup'].get(ex_canon)

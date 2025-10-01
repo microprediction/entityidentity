@@ -11,8 +11,6 @@ This script:
 6. Generates validation report for duplicates, missing clusters, unit/basis mismatches
 """
 
-import hashlib
-import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -20,76 +18,13 @@ from typing import Dict, List, Optional
 import pandas as pd
 import yaml
 
-
-def normalize_name(name: str) -> str:
-    """
-    Aggressive normalization for matching and ID generation.
-    Follows entityidentity normalization patterns.
-    """
-    if not name:
-        return ""
-
-    # Convert to lowercase
-    name = name.lower()
-
-    # Remove parenthetical content
-    name = re.sub(r'\([^)]*\)', '', name)
-
-    # Remove common suffixes/patterns
-    name = re.sub(r'\b(metal|ore|concentrate|oxide|hydroxide|carbonate|sulfate|chloride)\b', '', name)
-
-    # Remove special characters and extra whitespace
-    name = re.sub(r'[^\w\s]', ' ', name)
-    name = re.sub(r'\s+', ' ', name)
-
-    return name.strip()
-
-
-def canonicalize_name(name: str) -> str:
-    """
-    Canonicalize name for display (preserve readability).
-    """
-    if not name:
-        return ""
-
-    # Just clean up whitespace and preserve casing
-    name = re.sub(r'\s+', ' ', name)
-    return name.strip()
-
-
-def slugify(name: str) -> str:
-    """
-    Convert name to slug format for metal_key.
-    'Lithium carbonate' -> 'lithium-carbonate'
-    """
-    if not name:
-        return ""
-
-    # Convert to lowercase
-    name = name.lower()
-
-    # Remove parenthetical content
-    name = re.sub(r'\([^)]*\)', '', name)
-
-    # Replace non-alphanumeric with hyphens
-    name = re.sub(r'[^\w\s-]', '', name)
-    name = re.sub(r'[\s_]+', '-', name)
-
-    # Remove duplicate hyphens
-    name = re.sub(r'-+', '-', name)
-
-    return name.strip('-')
-
-
-def generate_metal_id(name: str) -> str:
-    """
-    Generate deterministic metal_id using SHA1.
-    Formula: sha1(normalize(name) + '|metal')[:16]
-    """
-    normalized = normalize_name(name)
-    id_string = f"{normalized}|metal"
-    hash_obj = hashlib.sha1(id_string.encode('utf-8'))
-    return hash_obj.hexdigest()[:16]
+# Import metal normalization functions from the shared module
+from entityidentity.metals.metalnormalize import (
+    normalize_metal_name,
+    canonicalize_metal_name,
+    slugify_metal_name,
+    generate_metal_id,
+)
 
 
 def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:
@@ -243,14 +178,14 @@ def main():
 
         # Generate IDs
         metal_id = generate_metal_id(name)
-        metal_key = metal.get('metal_key') or slugify(name)
+        metal_key = metal.get('metal_key') or slugify_metal_name(name)
 
         # Create row with all fields as strings
         row = {
             'metal_id': metal_id,
             'metal_key': metal_key,
-            'name': canonicalize_name(name),
-            'name_norm': normalize_name(name),
+            'name': canonicalize_metal_name(name),
+            'name_norm': normalize_metal_name(name),
             'symbol': str(metal.get('symbol') or ''),
             'formula': str(metal.get('formula') or ''),
             'code': str(metal.get('code') or ''),

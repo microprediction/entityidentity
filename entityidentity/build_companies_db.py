@@ -18,8 +18,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 import pandas as pd
-from entityidentity.companies.companyidentity import normalize_name
-from entityidentity.companies.companynormalize import canonicalize_name
+from entityidentity.companies.companynormalize import normalize_company_name, canonicalize_company_name
 
 # Import loaders
 from entityidentity.companies.companygleif import load_gleif_lei, sample_gleif_data
@@ -180,8 +179,8 @@ def _normalize_gleif(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize GLEIF data to standard schema."""
     df = df.copy()
     # Canonicalize name for safe identifier use
-    df['name'] = df['name'].apply(canonicalize_name)
-    df['name_norm'] = df['name'].apply(normalize_name)
+    df['name'] = df['name'].apply(canonicalize_company_name)
+    df['name_norm'] = df['name'].apply(normalize_company_name)
     # Flat alias columns (GLEIF doesn't provide aliases)
     for i in range(1, 6):
         df[f'alias{i}'] = None
@@ -195,8 +194,8 @@ def _normalize_wikidata(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize Wikidata to standard schema."""
     df = df.copy()
     # Canonicalize name for safe identifier use
-    df['name'] = df['name'].apply(canonicalize_name)
-    df['name_norm'] = df['name'].apply(normalize_name)
+    df['name'] = df['name'].apply(canonicalize_company_name)
+    df['name_norm'] = df['name'].apply(normalize_company_name)
     
     # Convert aliases list to flat columns (alias1, alias2, ..., alias5) if needed
     # Check if alias columns already exist (e.g., from sample data)
@@ -234,8 +233,8 @@ def _normalize_exchange(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize stock exchange data to standard schema."""
     df = df.copy()
     # Canonicalize name for safe identifier use
-    df['name'] = df['name'].apply(canonicalize_name)
-    df['name_norm'] = df['name'].apply(normalize_name)
+    df['name'] = df['name'].apply(canonicalize_company_name)
+    df['name_norm'] = df['name'].apply(normalize_company_name)
     df['lei'] = None
     df['wikidata_qid'] = None
     

@@ -706,3 +706,148 @@ metals:
       - "NdPr oxide"
     notes: "Critical for permanent magnets, typically quoted as mixed oxide, not separated"
     sources: ["USGS", "Fastmarkets"]
+
+  - name: "Ferromanganese"
+    symbol: null
+    metal_key: "ferromanganese"
+    formula: null
+    code: "FeMn"
+    category_bucket: "ferroalloy"
+    cluster_id: "ferroalloy_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-FEM-0001"
+    aliases:
+      - "FeMn"
+      - "HC FeMn"
+      - "high carbon ferromanganese"
+    notes: "High carbon ferromanganese, typically 78% Mn, essential for steelmaking"
+    sources: ["USGS", "Fastmarkets"]
+
+  - name: "Ferrovanadium"
+    symbol: null
+    metal_key: "ferrovanadium"
+    formula: null
+    code: "FeV"
+    category_bucket: "ferroalloy"
+    cluster_id: "ferroalloy_chain"
+    default_unit: "lb"
+    default_basis: "$/lb V"
+    hs6: null
+    pra_hint: "MB-V-0001"
+    aliases:
+      - "FeV"
+      - "FeV80"
+      - "ferrovanadium 80%"
+    notes: "Typically 78-82% V content, for high-strength steel alloys"
+    sources: ["USGS", "Fastmarkets"]
+
+  - name: "Ferrotungsten"
+    symbol: null
+    metal_key: "ferrotungsten"
+    formula: null
+    code: "FeW"
+    category_bucket: "ferroalloy"
+    cluster_id: "sn_ta_nb_w_chain"
+    default_unit: "kg"
+    default_basis: "$/kg W"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "FeW"
+      - "FeW75"
+      - "ferrotungsten 75%"
+    notes: "Typically 75% W content, for tool steels and superalloys"
+    sources: ["USGS", "Fastmarkets"]
+
+  - name: "Ferromolybdenum"
+    symbol: null
+    metal_key: "ferromolybdenum"
+    formula: null
+    code: "FeMo"
+    category_bucket: "ferroalloy"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "lb"
+    default_basis: "$/lb Mo"
+    hs6: null
+    pra_hint: "MB-FEO-0001"
+    aliases:
+      - "FeMo"
+      - "FeMo60"
+      - "ferromoly"
+    notes: "Typically 60-70% Mo content, for alloy steels"
+    sources: ["USGS", "Fastmarkets"]
+
+  - name: "Tungsten"
+    symbol: "W"
+    metal_key: "tungsten"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "sn_ta_nb_w_chain"
+    default_unit: "kg"
+    default_basis: "$/kg"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "W"
+      - "wolfram"
+      - "tungsten metal"
+    notes: "Element 74, highest melting point of all metals (3422°C)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Tantalum"
+    symbol: "Ta"
+    metal_key: "tantalum"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "sn_ta_nb_w_chain"
+    default_unit: "lb"
+    default_basis: "$/lb Ta2O5"
+    hs6: null
+    pra_hint: "MB-TA-0001"
+    aliases:
+      - "Ta"
+      - "tantalum pentoxide"
+      - "Ta2O5"
+    notes: "Element 73, critical for capacitors, often traded as Ta2O5"
+    sources: ["IUPAC", "Fastmarkets"]
+
+  - name: "Niobium"
+    symbol: "Nb"
+    metal_key: "niobium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "sn_ta_nb_w_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Nb2O5"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Nb"
+      - "columbium"
+      - "Cb"
+      - "niobium pentoxide"
+    notes: "Element 41, used in steel alloys and superconductors, often traded as Nb2O5"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Vanadium"
+    symbol: "V"
+    metal_key: "vanadium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "ferroalloy_chain"
+    default_unit: "lb"
+    default_basis: "$/lb V2O5"
+    hs6: null
+    pra_hint: "MB-V-0002"
+    aliases:
+      - "V"
+      - "vanadium pentoxide"
+      - "V2O5"
+    notes: "Element 23, critical for steel alloys and energy storage, often traded as V2O5"
+    sources: ["IUPAC", "Fastmarkets"]
