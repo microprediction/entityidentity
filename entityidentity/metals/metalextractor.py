@@ -229,50 +229,66 @@ def extract_metals_from_text(text: str, cluster_hint: Optional[str] = None) -> L
             )
 
     # 4. Extract element symbols and combinations
-    # Pattern for element symbols (capital letter followed by optional lowercase)
-    # Must be preceded by word boundary or specific punctuation
-    symbol_pattern = r'(?:^|[\s,;:\(\[\{/\-])((?:' + '|'.join(ELEMENT_SYMBOLS) + r')(?:[/\-](?:' + '|'.join(ELEMENT_SYMBOLS) + r'))*)'
+    # Look for symbols in specific contexts to avoid false positives
+    # Context 1: Combinations with / or - (e.g., Pt/Pd, Ni-Co)
+    combo_pattern = r'\b(' + '|'.join(ELEMENT_SYMBOLS) + r')([/\-](?:' + '|'.join(ELEMENT_SYMBOLS) + r'))+\b'
+    for match in re.finditer(combo_pattern, text):
+        add_result(
+            query=match.group().lower(),
+            span=match.span(),
+            hint='symbol_combination',
+            category=None  # Mixed, let identifier determine
+        )
 
-    for match in re.finditer(symbol_pattern, text):
-        symbol_text = match.group(1)
-        symbol_span = (match.start(1), match.end(1))
+    # Context 2: Symbols with percentages, parentheses, or after specific words
+    # This helps identify actual chemical symbols vs. random capital letters
+    context_patterns = [
+        # Symbol in parentheses: (Au), (Pt)
+        r'\((' + '|'.join(ELEMENT_SYMBOLS) + r')\)',
+        # Symbol after colon or equals: : Cu, = Ag
+        r'[:=]\s*(' + '|'.join(ELEMENT_SYMBOLS) + r')\b',
+        # Symbol with percentage: 99% Cu
+        r'\d+(?:\.\d+)?%\s*(' + '|'.join(ELEMENT_SYMBOLS) + r')\b',
+        # Symbol after "of" or "for": kg of Cu, price for Au
+        r'\b(?:of|for|with|containing)\s+(' + '|'.join(ELEMENT_SYMBOLS) + r')\b',
+        # Comma-separated list: Pt, Pd, Rh
+        r'(?:^|[,\s])(' + '|'.join(ELEMENT_SYMBOLS) + r')(?=,|\s+(?:and|or)\s+(?:' + '|'.join(ELEMENT_SYMBOLS) + r'))',
+        # Symbol at end of sentence or before punctuation
+        r'\b(' + '|'.join(ELEMENT_SYMBOLS) + r')(?=[.\s,;:!?\)]|$)',
+    ]
 
-        # Check if it's a combination (e.g., Pt/Pd, Ni-Co)
-        if '/' in symbol_text or '-' in symbol_text:
-            # Split and validate each part
-            separators = re.findall(r'[/\-]', symbol_text)
-            parts = re.split(r'[/\-]', symbol_text)
+    for pattern in context_patterns:
+        for match in re.finditer(pattern, text):
+            symbol_text = match.group(1) if match.lastindex else match.group()
+            symbol_span = (match.start(1) if match.lastindex else match.start(),
+                          match.end(1) if match.lastindex else match.end())
 
-            if all(part in ELEMENT_SYMBOLS for part in parts):
+            if symbol_text in ELEMENT_SYMBOLS:
+                # Avoid duplicates from overlapping patterns
+                if any(r['span'] == symbol_span and r['hint'] == 'symbol' for r in results):
+                    continue
+
+                # Try to determine category based on symbol
+                category = None
+                if symbol_text in ['Au', 'Ag']:
+                    category = 'precious'
+                elif symbol_text in ['Pt', 'Pd', 'Rh', 'Ru', 'Ir', 'Os']:
+                    category = 'pgm'
+                elif symbol_text in ['Cu', 'Zn', 'Pb', 'Al', 'Ni', 'Sn', 'Fe']:
+                    category = 'base'
+                elif symbol_text in ['Li', 'Co', 'Mn', 'C']:
+                    category = 'battery'
+                elif symbol_text in ['La', 'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Y', 'Sc']:
+                    category = 'ree'
+                else:
+                    category = 'specialty'
+
                 add_result(
                     query=symbol_text.lower(),
                     span=symbol_span,
-                    hint='symbol_combination',
-                    category=None  # Mixed, let identifier determine
+                    hint='symbol',
+                    category=category
                 )
-        elif symbol_text in ELEMENT_SYMBOLS:
-            # Single symbol
-            # Try to determine category based on symbol
-            category = None
-            if symbol_text in ['Au', 'Ag']:
-                category = 'precious'
-            elif symbol_text in ['Pt', 'Pd', 'Rh', 'Ru', 'Ir', 'Os']:
-                category = 'pgm'
-            elif symbol_text in ['Cu', 'Zn', 'Pb', 'Al', 'Ni', 'Sn', 'Fe']:
-                category = 'base'
-            elif symbol_text in ['Li', 'Co', 'Mn', 'C']:
-                category = 'battery'
-            elif symbol_text in ['La', 'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Y', 'Sc']:
-                category = 'ree'
-            else:
-                category = 'specialty'
-
-            add_result(
-                query=symbol_text.lower(),
-                span=symbol_span,
-                hint='symbol',
-                category=category
-            )
 
     # 5. Look for specific patterns with percentages (e.g., "99.5% copper", "88.5% WO3")
     percent_pattern = r'(\d+(?:\.\d+)?%)\s+(' + '|'.join(ELEMENT_SYMBOLS) + r'|' + '|'.join([k for k in METAL_NAMES.keys()]) + r')'
