@@ -1,0 +1,85 @@
+version: 0.2
+clusters:
+  pgm_complex:
+    name: "PGM Complex"
+    description: "Bushveld/Great Dyke + Ni-Cu sulfide co-products"
+    notes: "Primary PGM deposits and by-product PGMs from Ni-Cu sulfide processing"
+    sources: ["USGS"]
+
+  porphyry_copper_chain:
+    name: "Porphyry Copper Chain"
+    description: "Cu→Mo→Re; Cu anode slimes → Se/Te/Au"
+    notes: "Re recovered from Mo roaster flue dust; Se/Te/Au from Cu electrolytic refining"
+    sources: ["USGS"]
+
+  lead_zinc_chain:
+    name: "Lead-Zinc Chain"
+    description: "Pb-Zn smelter by-products (Ag,Cd,In,Ge,Bi,Sb)"
+    notes: "In mainly from Zn processing residues; Ag/Cd/Ge/Bi/Sb from smelter streams"
+    sources: ["USGS"]
+
+  nickel_cobalt_chain:
+    name: "Nickel-Cobalt Chain"
+    description: "Ni–Co sulfides & laterites (+Sc residues)"
+    notes: "Co as co-product from Ni laterite and sulfide operations; Sc from residues"
+    sources: ["USGS"]
+
+  mineral_sands_chain:
+    name: "Mineral Sands Chain"
+    description: "Ilmenite/Rutile/Zircon (Ti/Zr; Hf separation)"
+    notes: "Hf separated from Zr downstream; Ti from ilmenite/rutile upgrading"
+    sources: ["USGS"]
+
+  ferroalloy_chain:
+    name: "Ferroalloy Chain"
+    description: "Chromite/Mn/VTM → ferroalloys"
+    notes: "FeCr, FeMn, FeV, ferroalloys from metallurgical processing"
+    sources: ["USGS"]
+
+  sn_ta_nb_w_chain:
+    name: "Tin-Tantalum-Niobium-Tungsten Chain"
+    description: "Sn–Ta–Nb–W pegmatite/skarn belts"
+    notes: "Sn, Ta, Nb, W often co-occur in pegmatite and skarn deposits"
+    sources: ["USGS"]
+
+  rare_earth_chain:
+    name: "Rare Earth Chain"
+    description: "REE deposits & ion-adsorption clays"
+    notes: "All REE elements (La through Lu, plus Y); ion-adsorption for HREE"
+    sources: ["USGS"]
+
+  aluminum_chain:
+    name: "Aluminum Chain"
+    description: "Bauxite→Alumina→Al (Ga from Bayer liquor)"
+    notes: "Ga recovered from Bayer process liquor during alumina production"
+    sources: ["USGS"]
+
+  lithium_chain:
+    name: "Lithium Chain"
+    description: "Li brines & hard-rock"
+    notes: "Lithium from brines (salares) and hard-rock (spodumene) sources"
+    sources: ["USGS"]
+
+  evaporite_chain:
+    name: "Evaporite Chain"
+    description: "K/Na/Mg from evaporites & brines"
+    notes: "Potash, sodium, magnesium from evaporite deposits and brine operations"
+    sources: ["USGS"]
+
+  carbon_silicon_chain:
+    name: "Carbon-Silicon Chain"
+    description: "Graphite & silicon (quartz reduction)"
+    notes: "Natural and synthetic graphite; silicon from quartz reduction"
+    sources: ["USGS"]
+
+  specialty_industrials:
+    name: "Specialty Industrial Metals"
+    description: "Be,Ba,Sr,Ca,Cs,Rb stand-alone routes"
+    notes: "Specialty metals with distinct, stand-alone production routes"
+    sources: ["USGS"]
+
+  nuclear_chain:
+    name: "Nuclear Chain"
+    description: "Uranium mining/milling"
+    notes: "Uranium ore processing and yellowcake production"
+    sources: ["USGS"]

@@ -1,0 +1,122 @@
+version: 0.2
+metals:
+  - name: "Platinum"
+    symbol: "Pt"
+    metal_key: "platinum"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Pt"
+    notes: "Element 78, density 21.45 g/cm³"
+    sources: ["IUPAC"]
+
+  - name: "Gold"
+    symbol: "Au"
+    metal_key: "gold"
+    formula: null
+    code: null
+    category_bucket: "precious"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Au"
+    notes: "Element 79, recovered from Cu anode slimes"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Copper"
+    symbol: "Cu"
+    metal_key: "copper"
+    formula: null
+    code: null
+    category_bucket: "base"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Cu"
+    notes: "Element 29, primary metal in porphyry copper deposits"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Ammonium paratungstate"
+    symbol: null
+    metal_key: "apt"
+    formula: "(NH4)10[H2W12O42]·xH2O"
+    code: "WO3"
+    category_bucket: "specialty"
+    cluster_id: "sn_ta_nb_w_chain"
+    default_unit: "mtu"
+    default_basis: "$/mtu WO3"
+    hs6: null
+    pra_hint: "MB-W-0001"
+    aliases:
+      - "APT"
+      - "APT 88.5%"
+    notes: "Spec usually ≥88.5% WO3"
+    sources: ["Fastmarkets", "USGS"]
+
+  - name: "Ferrochrome"
+    symbol: null
+    metal_key: "ferrochrome"
+    formula: null
+    code: "FeCr"
+    category_bucket: "ferroalloy"
+    cluster_id: "ferroalloy_chain"
+    default_unit: "lb"
+    default_basis: "$/lb Cr"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "FeCr"
+      - "ferrochromium"
+      - "HC FeCr"
+      - "charge chrome"
+    notes: "Chromite reduction, essential for stainless steel"
+    sources: ["USGS", "Fastmarkets"]
+
+  - name: "Lithium carbonate"
+    symbol: null
+    metal_key: "lithium-carbonate"
+    formula: "Li2CO3"
+    code: "Li2CO3"
+    category_bucket: "battery"
+    cluster_id: "lithium_chain"
+    default_unit: "mt"
+    default_basis: "$/mt Li2CO3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Li2CO3"
+      - "lithium carb"
+      - "battery grade lithium carbonate"
+    notes: "Battery-grade typically ≥99.5% purity"
+    sources: ["Fastmarkets", "USGS"]
+
+  - name: "Neodymium-Praseodymium"
+    symbol: null
+    metal_key: "ndpr"
+    formula: null
+    code: "NdPr"
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg NdPr oxide"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "NdPr"
+      - "Nd-Pr"
+      - "didymium"
+      - "NdPr oxide"
+    notes: "Critical for permanent magnets, typically quoted as mixed oxide"
+    sources: ["USGS", "Fastmarkets"]
