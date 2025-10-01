@@ -89,13 +89,24 @@ if [ -f "$GLEIF_CACHE" ]; then
     echo "✅ GLEIF cache found: $GLEIF_CACHE"
     echo "   Skipping download (delete cache to re-download)"
 else
-    echo "⬇️  Downloading GLEIF (2.5M records, ~30-45 min)..."
+    echo "⬇️  Need to download GLEIF (2.5M records, ~30-45 min)..."
     echo ""
+    echo "This is a ONE-TIME download that will be cached."
+    echo "Future runs will skip this step."
+    echo ""
+    
+    # Run download script (it has its own confirmation)
     python scripts/companies/download_gleif_full.py
     
-    if [ $? -ne 0 ]; then
+    # Check if download was successful
+    if [ ! -f "$GLEIF_CACHE" ]; then
         echo ""
-        echo "❌ GLEIF download failed!"
+        echo "❌ GLEIF download cancelled or failed!"
+        echo ""
+        echo "The dataset cannot be built without GLEIF data."
+        echo "To proceed, run:"
+        echo "   python scripts/companies/download_gleif_full.py"
+        echo ""
         exit 1
     fi
 fi

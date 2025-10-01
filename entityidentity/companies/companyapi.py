@@ -7,8 +7,10 @@ Implementation details are in the helper modules.
 from typing import List, Optional, Dict, Any, Tuple
 import pandas as pd
 
-from entityidentity.companies.companyidentity import (
+from entityidentity.companies.companynormalize import (
     normalize_name as _normalize_name,
+)
+from entityidentity.companies.companyresolver import (
     resolve_company as _resolve_company,
     load_companies as _load_companies,
 )

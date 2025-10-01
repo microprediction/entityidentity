@@ -70,44 +70,183 @@ def load_gleif_lei(
                 df = df.head(max_records)
             return df
     
-    # Set default max_records
+    # Determine how many records to fetch
     if max_records is None:
-        max_records = 10000
-    
-    print(f"Fetching {max_records:,} LEI records from GLEIF API...")
-    print(f"API: {GLEIF_LEI_RECORDS_URL}")
-    
-    # Fetch paginated data
-    page_size = 200  # Max records per request
-    num_pages = (max_records + page_size - 1) // page_size
+        print(f"Fetching ALL LEI records from GLEIF API (~2.5M records)...")
+        print(f"This will take approximately 30-45 minutes...")
+        print(f"API: {GLEIF_LEI_RECORDS_URL}")
+        # We'll fetch pages until we get no more data
+        fetch_all = True
+        num_pages = None  # Unknown
+    else:
+        print(f"Fetching {max_records:,} LEI records from GLEIF API...")
+        print(f"API: {GLEIF_LEI_RECORDS_URL}")
+        fetch_all = False
+        page_size = 200  # Max records per request
+        num_pages = (max_records + page_size - 1) // page_size
     
     all_records = []
-    for page_num in tqdm(range(1, num_pages + 1), desc="Fetching pages"):
-        params = {
-            'page[number]': page_num,
-            'page[size]': min(page_size, max_records - len(all_records)),
-        }
+    page_size = 200  # Max records per request
+    
+    # For incremental saving during long downloads
+    temp_cache_file = None
+    resume_from_page = 0
+    if cache_dir and fetch_all:
+        cache_path = Path(cache_dir)
+        cache_path.mkdir(parents=True, exist_ok=True)
+        temp_cache_file = cache_path / "gleif_full_temp.parquet"
         
-        try:
-            response = requests.get(GLEIF_LEI_RECORDS_URL, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extract records from JSON API format
-            if 'data' in data:
-                all_records.extend(data['data'])
-            
-            if len(all_records) >= max_records:
-                break
+        # Clean up any incomplete write
+        temp_write_file = cache_path / f"{temp_cache_file.name}.writing"
+        if temp_write_file.exists():
+            print(f"Removing incomplete write: {temp_write_file}")
+            temp_write_file.unlink()
+        
+        # Check if we have a partial download to resume
+        if temp_cache_file.exists():
+            print(f"\n✅ Found partial download: {temp_cache_file}")
+            print(f"   File size: {temp_cache_file.stat().st_size / 1024 / 1024:.1f} MB")
+            try:
+                temp_df = pd.read_parquet(temp_cache_file)
+                # Convert back to raw JSON format for API
+                # This is a workaround - we'll skip already-fetched pages
+                resume_from_page = len(temp_df) // page_size
+                print(f"   Records: {len(temp_df):,}")
+                print(f"   Resuming from page: {resume_from_page:,}")
+                print(f"\n⚠️  Note: Will re-download from page {resume_from_page}")
+                print(f"   (Cannot resume mid-page with current API)")
+                print()
+            except Exception as e:
+                print(f"⚠️  Could not load temp file: {e}")
+                print(f"   Starting fresh download...")
+                try:
+                    temp_cache_file.unlink()
+                except:
+                    pass
+    
+    if fetch_all:
+        # Fetch all pages until no more data
+        page_num = resume_from_page + 1 if resume_from_page > 0 else 1
+        save_interval = 100  # Save every 100 pages (~20K records)
+        last_save = resume_from_page
+        
+        # Estimate: ~2.5M records / 200 per page = ~12,500 pages
+        estimated_total_pages = 12500
+        
+        with tqdm(
+            desc="Fetching GLEIF", 
+            unit="page", 
+            initial=resume_from_page,
+            total=estimated_total_pages,
+            bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}'
+        ) as pbar:
+            while True:
+                params = {
+                    'page[number]': page_num,
+                    'page[size]': page_size,
+                }
                 
+                try:
+                    response = requests.get(GLEIF_LEI_RECORDS_URL, params=params, timeout=30)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    # Extract records from JSON API format
+                    if 'data' in data and len(data['data']) > 0:
+                        all_records.extend(data['data'])
+                        pbar.update(1)
+                        
+                        # Show records in millions for readability
+                        records_str = f"{len(all_records)/1000:.1f}K" if len(all_records) < 1000000 else f"{len(all_records)/1000000:.2f}M"
+                        pbar.set_postfix_str(f"{records_str} records")
+                        page_num += 1
+                        
+                        # Incremental save to temp file
+                        if temp_cache_file and (page_num - last_save) >= save_interval:
+                            try:
+                                # Atomic write: write to temp, then rename
+                                temp_write_file = temp_cache_file.parent / f"{temp_cache_file.name}.writing"
+                                temp_df = _parse_gleif_json(all_records)
+                                temp_df.to_parquet(temp_write_file, index=False)
+                                # Atomic rename (overwrites old temp file)
+                                temp_write_file.replace(temp_cache_file)
+                                last_save = page_num
+                                pbar.set_postfix_str(f"{records_str} records [saved ✓]")
+                            except Exception as e:
+                                pbar.set_postfix_str(f"{records_str} records [save failed: {e}]")
+                                # Continue downloading even if save fails
+                    else:
+                        # No more data
+                        break
+                        
+                except requests.exceptions.RequestException as e:
+                    print(f"\n⚠️  Error fetching page {page_num}: {e}")
+                    if len(all_records) > 0:
+                        print(f"Saving {len(all_records):,} records before exit...")
+                        # Save what we have
+                        if temp_cache_file:
+                            try:
+                                # Atomic write
+                                temp_write_file = temp_cache_file.parent / f"{temp_cache_file.name}.writing"
+                                temp_df = _parse_gleif_json(all_records)
+                                temp_df.to_parquet(temp_write_file, index=False)
+                                temp_write_file.replace(temp_cache_file)
+                                print(f"✅ Saved to: {temp_cache_file}")
+                                print(f"   To resume: run the same command again")
+                            except Exception as save_error:
+                                print(f"❌ Failed to save: {save_error}")
+                                print(f"   {len(all_records):,} records will be lost!")
+                        break
+                    else:
+                        raise
+                except KeyboardInterrupt:
+                    print(f"\n\n⚠️  Download interrupted by user")
+                    if len(all_records) > 0:
+                        print(f"Saving {len(all_records):,} records before exit...")
+                        if temp_cache_file:
+                            try:
+                                temp_write_file = temp_cache_file.parent / f"{temp_cache_file.name}.writing"
+                                temp_df = _parse_gleif_json(all_records)
+                                temp_df.to_parquet(temp_write_file, index=False)
+                                temp_write_file.replace(temp_cache_file)
+                                print(f"✅ Saved to: {temp_cache_file}")
+                                print(f"   To resume: run the same command again")
+                            except Exception as save_error:
+                                print(f"❌ Failed to save: {save_error}")
+                        raise
+                    else:
+                        raise
+                
+                # Rate limiting
+                time.sleep(1 / GLEIF_RATE_LIMIT * 60)  # Respect rate limit
+    else:
+        # Fetch limited number of pages
+        for page_num in tqdm(range(1, num_pages + 1), desc="Fetching pages"):
+            params = {
+                'page[number]': page_num,
+                'page[size]': min(page_size, max_records - len(all_records)),
+            }
+            
+            try:
+                response = requests.get(GLEIF_LEI_RECORDS_URL, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                
+                # Extract records from JSON API format
+                if 'data' in data:
+                    all_records.extend(data['data'])
+                
+                if len(all_records) >= max_records:
+                    break
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"\n⚠️  Error fetching page {page_num}: {e}")
+                if len(all_records) == 0:
+                    raise
+                break
+            
             # Respect rate limiting (60 req/min = 1 req per second)
             time.sleep(1.1)
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Warning: Failed to fetch page {page_num}: {e}")
-            if len(all_records) == 0:
-                raise
-            break
     
     print(f"Fetched {len(all_records):,} records")
     

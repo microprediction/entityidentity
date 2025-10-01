@@ -26,7 +26,8 @@ def main():
     print("=" * 70)
     
     cache_dir = Path(".cache/companies")
-    cache_file = cache_dir / "gleif_full.parquet"
+    # Match the filename pattern used by load_gleif_lei
+    cache_file = cache_dir / "gleif_lei_all.parquet"
     
     print(f"\n📂 Cache directory: {cache_dir}")
     print(f"📄 Output file: {cache_file}")
