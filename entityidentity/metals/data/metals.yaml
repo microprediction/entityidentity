@@ -141,7 +141,187 @@ metals:
     pra_hint: null
     aliases:
       - "Cu"
+      - "cathode copper"
     notes: "Element 29, primary metal in porphyry copper deposits"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Molybdenum"
+    symbol: "Mo"
+    metal_key: "molybdenum"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "lb"
+    default_basis: "$/lb Mo"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Mo"
+      - "moly"
+    notes: "Element 42, co-product from porphyry copper deposits"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Rhenium"
+    symbol: "Re"
+    metal_key: "rhenium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "kg"
+    default_basis: "$/kg"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Re"
+    notes: "Element 75, by-product recovered from Mo roaster flue dust (porphyry Cu)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Selenium"
+    symbol: "Se"
+    metal_key: "selenium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Se"
+    notes: "Element 34, recovered from Cu anode slimes during electrolytic refining"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Tellurium"
+    symbol: "Te"
+    metal_key: "tellurium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "porphyry_copper_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Te"
+    notes: "Element 52, recovered from Cu anode slimes during electrolytic refining"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Zinc"
+    symbol: "Zn"
+    metal_key: "zinc"
+    formula: null
+    code: null
+    category_bucket: "base"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Zn"
+      - "SHG zinc"
+      - "special high grade zinc"
+    notes: "Element 30, primary metal in Pb-Zn deposits"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Lead"
+    symbol: "Pb"
+    metal_key: "lead"
+    formula: null
+    code: null
+    category_bucket: "base"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Pb"
+    notes: "Element 82, primary metal in Pb-Zn deposits"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Cadmium"
+    symbol: "Cd"
+    metal_key: "cadmium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Cd"
+    notes: "Element 48, by-product of Pb-Zn smelting"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Indium"
+    symbol: "In"
+    metal_key: "indium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "kg"
+    default_basis: "$/kg"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "In"
+    notes: "Element 49, mainly recovered from Zn processing residues"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Germanium"
+    symbol: "Ge"
+    metal_key: "germanium"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "kg"
+    default_basis: "$/kg"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Ge"
+    notes: "Element 32, by-product from Pb-Zn smelting, also from coal fly ash"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Bismuth"
+    symbol: "Bi"
+    metal_key: "bismuth"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Bi"
+    notes: "Element 83, by-product of Pb-Zn smelting"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Antimony"
+    symbol: "Sb"
+    metal_key: "antimony"
+    formula: null
+    code: null
+    category_bucket: "specialty"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Sb"
+    notes: "Element 51, by-product of Pb-Zn smelting and from primary Sb deposits"
     sources: ["IUPAC", "USGS"]
 
   - name: "Ammonium paratungstate"
@@ -180,6 +360,23 @@ metals:
     notes: "Chromite reduction, essential for stainless steel"
     sources: ["USGS", "Fastmarkets"]
 
+  - name: "Lithium"
+    symbol: "Li"
+    metal_key: "lithium"
+    formula: null
+    code: null
+    category_bucket: "battery"
+    cluster_id: "lithium_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Li"
+      - "lithium metal"
+    notes: "Element 3, lightest metal"
+    sources: ["IUPAC", "USGS"]
+
   - name: "Lithium carbonate"
     symbol: null
     metal_key: "lithium-carbonate"
@@ -190,7 +387,7 @@ metals:
     default_unit: "mt"
     default_basis: "$/mt Li2CO3"
     hs6: null
-    pra_hint: null
+    pra_hint: "MB-LI-0029"
     aliases:
       - "Li2CO3"
       - "lithium carb"
@@ -198,10 +395,303 @@ metals:
     notes: "Battery-grade typically ≥99.5% purity"
     sources: ["Fastmarkets", "USGS"]
 
+  - name: "Lithium hydroxide"
+    symbol: null
+    metal_key: "lithium-hydroxide"
+    formula: "LiOH·H2O"
+    code: "LiOH"
+    category_bucket: "battery"
+    cluster_id: "lithium_chain"
+    default_unit: "mt"
+    default_basis: "$/mt LiOH"
+    hs6: null
+    pra_hint: "MB-LI-0033"
+    aliases:
+      - "LiOH"
+      - "lithium hydroxide monohydrate"
+      - "battery grade lithium hydroxide"
+    notes: "Battery-grade monohydrate, critical for NCM/NCA cathodes"
+    sources: ["Fastmarkets", "USGS"]
+
+  - name: "Cobalt"
+    symbol: "Co"
+    metal_key: "cobalt"
+    formula: null
+    code: null
+    category_bucket: "battery"
+    cluster_id: "nickel_cobalt_chain"
+    default_unit: "lb"
+    default_basis: "$/lb"
+    hs6: null
+    pra_hint: "MB-CO-0005"
+    aliases:
+      - "Co"
+      - "cobalt metal"
+    notes: "Element 27, critical battery metal"
+    sources: ["IUPAC", "Fastmarkets"]
+
+  - name: "Cobalt sulfate"
+    symbol: null
+    metal_key: "cobalt-sulfate"
+    formula: "CoSO4·7H2O"
+    code: "CoSO4"
+    category_bucket: "battery"
+    cluster_id: "nickel_cobalt_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-CO-0017"
+    aliases:
+      - "CoSO4"
+      - "cobalt sulphate"
+      - "cobalt sulfate heptahydrate"
+    notes: "Battery precursor, typically 20.5-21% Co content"
+    sources: ["Fastmarkets"]
+
+  - name: "Nickel"
+    symbol: "Ni"
+    metal_key: "nickel"
+    formula: null
+    code: null
+    category_bucket: "battery"
+    cluster_id: "nickel_cobalt_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-NI-0001"
+    aliases:
+      - "Ni"
+      - "nickel metal"
+    notes: "Element 28, Class I nickel for batteries"
+    sources: ["IUPAC", "Fastmarkets"]
+
+  - name: "Nickel sulfate"
+    symbol: null
+    metal_key: "nickel-sulfate"
+    formula: "NiSO4·6H2O"
+    code: "NiSO4"
+    category_bucket: "battery"
+    cluster_id: "nickel_cobalt_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-NI-0246"
+    aliases:
+      - "NiSO4"
+      - "nickel sulphate"
+      - "nickel sulfate hexahydrate"
+    notes: "Battery precursor, typically 22.3% Ni content"
+    sources: ["Fastmarkets"]
+
+  - name: "Graphite (natural)"
+    symbol: null
+    metal_key: "graphite-natural"
+    formula: "C"
+    code: "C"
+    category_bucket: "battery"
+    cluster_id: "carbon_silicon_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-GRA-0014"
+    aliases:
+      - "natural graphite"
+      - "flake graphite"
+      - "spherical graphite"
+    notes: "Natural flake graphite for battery anodes, -100 mesh, 94-97% C"
+    sources: ["Fastmarkets", "USGS"]
+
+  - name: "Graphite (synthetic)"
+    symbol: null
+    metal_key: "graphite-synthetic"
+    formula: "C"
+    code: "C"
+    category_bucket: "battery"
+    cluster_id: "carbon_silicon_chain"
+    default_unit: "mt"
+    default_basis: "$/mt"
+    hs6: null
+    pra_hint: "MB-GRA-0021"
+    aliases:
+      - "synthetic graphite"
+      - "artificial graphite"
+    notes: "Synthetic graphite for battery anodes, >99.95% C"
+    sources: ["Fastmarkets"]
+
+  - name: "Lanthanum"
+    symbol: "La"
+    metal_key: "lanthanum"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg La2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "La"
+      - "lanthanum oxide"
+    notes: "Element 57, light REE, typically traded as oxide (La2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Cerium"
+    symbol: "Ce"
+    metal_key: "cerium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg CeO2"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Ce"
+      - "cerium oxide"
+    notes: "Element 58, light REE, most abundant REE, typically traded as oxide (CeO2)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Praseodymium"
+    symbol: "Pr"
+    metal_key: "praseodymium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Pr6O11"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Pr"
+      - "praseodymium oxide"
+    notes: "Element 59, light REE, critical for magnets, typically traded as oxide (Pr6O11)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Neodymium"
+    symbol: "Nd"
+    metal_key: "neodymium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Nd2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Nd"
+      - "neodymium oxide"
+    notes: "Element 60, light REE, critical for permanent magnets (NdFeB), typically traded as oxide (Nd2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Samarium"
+    symbol: "Sm"
+    metal_key: "samarium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Sm2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Sm"
+      - "samarium oxide"
+    notes: "Element 62, light REE, used in SmCo magnets, typically traded as oxide (Sm2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Europium"
+    symbol: "Eu"
+    metal_key: "europium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Eu2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Eu"
+      - "europium oxide"
+    notes: "Element 63, heavy REE, phosphor applications, typically traded as oxide (Eu2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Gadolinium"
+    symbol: "Gd"
+    metal_key: "gadolinium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Gd2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Gd"
+      - "gadolinium oxide"
+    notes: "Element 64, heavy REE, neutron absorber and MRI contrast, typically traded as oxide (Gd2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Terbium"
+    symbol: "Tb"
+    metal_key: "terbium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Tb4O7"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Tb"
+      - "terbium oxide"
+    notes: "Element 65, heavy REE, critical for magnets and phosphors, typically traded as oxide (Tb4O7)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Dysprosium"
+    symbol: "Dy"
+    metal_key: "dysprosium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Dy2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Dy"
+      - "dysprosium oxide"
+    notes: "Element 66, heavy REE, critical for high-temperature magnets, typically traded as oxide (Dy2O3)"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Yttrium"
+    symbol: "Y"
+    metal_key: "yttrium"
+    formula: null
+    code: null
+    category_bucket: "ree"
+    cluster_id: "rare_earth_chain"
+    default_unit: "kg"
+    default_basis: "$/kg Y2O3"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Y"
+      - "yttrium oxide"
+    notes: "Element 39, heavy REE, LEDs and phosphors, typically traded as oxide (Y2O3)"
+    sources: ["IUPAC", "USGS"]
+
   - name: "Neodymium-Praseodymium"
     symbol: null
     metal_key: "ndpr"
-    formula: null
+    formula: "(Nd,Pr)2O3"
     code: "NdPr"
     category_bucket: "ree"
     cluster_id: "rare_earth_chain"
@@ -214,5 +704,5 @@ metals:
       - "Nd-Pr"
       - "didymium"
       - "NdPr oxide"
-    notes: "Critical for permanent magnets, typically quoted as mixed oxide"
+    notes: "Critical for permanent magnets, typically quoted as mixed oxide, not separated"
     sources: ["USGS", "Fastmarkets"]

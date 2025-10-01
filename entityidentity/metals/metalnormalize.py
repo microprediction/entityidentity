@@ -28,7 +28,7 @@ import re
 import unicodedata
 
 
-def normalize_name(s: str) -> str:
+def normalize_metal_name(s: str) -> str:
     """
     Aggressive normalization for fuzzy matching.
 
@@ -82,7 +82,7 @@ def normalize_name(s: str) -> str:
     return s.strip()
 
 
-def canonicalize_name(s: str) -> str:
+def canonicalize_metal_name(s: str) -> str:
     """
     Light normalization for display and storage.
 
@@ -125,7 +125,7 @@ def canonicalize_name(s: str) -> str:
     return s
 
 
-def slugify(s: str) -> str:
+def slugify_metal_name(s: str) -> str:
     """
     Create URL/key-safe slug for metal names.
 
@@ -208,7 +208,7 @@ def generate_metal_id(name: str) -> str:
     import hashlib
 
     # Normalize and add namespace suffix
-    normalized = normalize_name(name)
+    normalized = normalize_metal_name(name)
     namespaced = f"{normalized}|metal"
 
     # SHA-1 hash, take first 16 hex chars
@@ -217,8 +217,17 @@ def generate_metal_id(name: str) -> str:
 
 
 __all__ = [
+    "normalize_metal_name",
+    "canonicalize_metal_name",
+    "slugify_metal_name",
+    "generate_metal_id",
+    # Backwards compatibility aliases
     "normalize_name",
     "canonicalize_name",
     "slugify",
-    "generate_metal_id",
 ]
+
+# Backwards compatibility aliases
+normalize_name = normalize_metal_name
+canonicalize_name = canonicalize_metal_name
+slugify = slugify_metal_name
