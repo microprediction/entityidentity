@@ -36,21 +36,35 @@ LEGAL_RE = re.compile(rf"\b{LEGAL_SUFFIXES}\b\.?", re.IGNORECASE)
 
 
 def normalize_name(name: str) -> str:
-    """Normalize company name for matching.
-    
+    """Normalize company name for FUZZY MATCHING and deduplication.
+
+    This function aggressively normalizes names to maximize matching potential.
+    Use this for: fuzzy matching, deduplication, similarity scoring.
+    DO NOT use this for: display names, identifiers, or user-facing output.
+
+    For display/identifier normalization, use companynormalize.canonicalize_name()
+
     Steps:
     1. Unicode normalization (NFKD)
     2. ASCII transliteration
-    3. Lowercase
+    3. Lowercase (for case-insensitive matching)
     4. Remove legal suffixes (before punctuation removal!)
     5. Remove punctuation (keep &, -, alphanumeric)
     6. Collapse whitespace
-    
+
     Args:
         name: Raw company name
-        
+
     Returns:
-        Normalized name string
+        Normalized name string (lowercase, no punctuation) for matching
+
+    Examples:
+        >>> normalize_name("Apple Inc.")
+        'apple'
+        >>> normalize_name("AT&T Corporation")
+        'at&t'
+        >>> normalize_name("Société Générale S.A.")
+        'societe generale'
     """
     if not name:
         return ""

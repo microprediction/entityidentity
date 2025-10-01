@@ -9,11 +9,17 @@ import unicodedata
 
 
 def canonicalize_name(name: str) -> str:
-    """Canonicalize company name for use in identifiers.
-    
+    """Canonicalize company name for DISPLAY and IDENTIFIERS.
+
+    This function preserves readability while ensuring names are safe for identifiers.
+    Use this for: display names, database identifiers, user-facing output.
+    DO NOT use this for: fuzzy matching or deduplication.
+
+    For matching/deduplication, use companyidentity.normalize_name()
+
     Ensures the name is safe to use in the identifier format "name:country"
     by removing/normalizing special characters that could cause parsing issues.
-    
+
     Rules:
     1. Remove commas before legal suffixes ("Tesla, Inc." -> "Tesla Inc")
     2. Remove periods from legal suffixes ("Inc." -> "Inc")
@@ -21,13 +27,14 @@ def canonicalize_name(name: str) -> str:
     4. Keep only: letters, numbers, spaces, hyphens, ampersands
     5. Collapse multiple spaces
     6. Trim whitespace
-    
+    7. PRESERVES CASE (unlike normalize_name which lowercases)
+
     Args:
         name: Original company name
-        
+
     Returns:
-        Canonicalized name safe for use in identifiers
-        
+        Canonicalized name safe for use in identifiers (preserves case)
+
     Examples:
         >>> canonicalize_name("Apple Inc.")
         'Apple Inc'
