@@ -120,28 +120,57 @@ def consolidate_companies(
     print("\n=== Consolidating data ===")
     combined = pd.concat(companies_dfs, ignore_index=True)
     
+    # Filter out companies with empty names
+    original_count = len(combined)
+    combined = combined[combined['name'].notna() & (combined['name'] != '')].copy()
+    if len(combined) < original_count:
+        print(f"Removed {original_count - len(combined)} companies with empty names")
+    
+    # Define source priority (highest to lowest)
+    # GLEIF: Official legal names from regulatory filings
+    # Wikidata: Crowdsourced but generally well-curated
+    # Exchanges: Often inconsistent formatting (ALL CAPS, etc.)
+    SOURCE_PRIORITY = {
+        'GLEIF': 1,
+        'Wikidata': 2,
+        'ASX': 3,
+        'LSE': 3,
+        'TSX': 3,
+    }
+    
+    # Add priority column for sorting
+    combined['_priority'] = combined['source'].map(SOURCE_PRIORITY).fillna(99)
+    
+    # Sort by priority (lower number = higher priority)
+    combined = combined.sort_values('_priority')
+    
     # Deduplicate based on LEI (if available), then by normalized name + country
     print(f"Total records before deduplication: {len(combined)}")
     
-    # First pass: dedupe by LEI
+    # First pass: dedupe by LEI, keeping highest priority source
     lei_records = combined[combined['lei'].notna() & (combined['lei'] != '')]
     no_lei_records = combined[~combined.index.isin(lei_records.index)]
     
+    # Keep first (highest priority due to sorting)
     lei_deduped = lei_records.drop_duplicates(subset=['lei'], keep='first')
-    print(f"Deduplicated {len(lei_records) - len(lei_deduped)} records by LEI")
+    print(f"Deduplicated {len(lei_records) - len(lei_deduped)} records by LEI (kept highest priority source)")
     
-    # Second pass: dedupe non-LEI records by name_norm + country
+    # Second pass: dedupe non-LEI records by name_norm + country, keeping highest priority
     no_lei_deduped = no_lei_records.drop_duplicates(
         subset=['name_norm', 'country'], 
         keep='first'
     )
-    print(f"Deduplicated {len(no_lei_records) - len(no_lei_deduped)} records by name+country")
+    print(f"Deduplicated {len(no_lei_records) - len(no_lei_deduped)} records by name+country (kept highest priority source)")
     
     final = pd.concat([lei_deduped, no_lei_deduped], ignore_index=True)
+    
+    # Remove temporary priority column
+    final = final.drop(columns=['_priority'])
     
     print(f"\nFinal dataset: {len(final)} unique companies")
     print(f"  - With LEI: {final['lei'].notna().sum()}")
     print(f"  - With Wikidata QID: {final['wikidata_qid'].notna().sum()}")
+    print(f"  - By source: {final['source'].value_counts().to_dict()}")
     print(f"  - By country: {final['country'].value_counts().head()}")
     
     return final

@@ -267,7 +267,7 @@ def score_candidates(
                 if pd.notna(alias):
                     alias_norm = normalize_name(str(alias))
                     alias_score = fuzz.WRatio(query_norm, alias_norm)
-            best_alias_score = max(best_alias_score, alias_score)
+                    best_alias_score = max(best_alias_score, alias_score)
         alias_scores.append(best_alias_score)
     df = df.assign(score_alias=alias_scores)
     

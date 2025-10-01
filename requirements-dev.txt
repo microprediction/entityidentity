@@ -4,4 +4,10 @@ anthropic>=0.18.0
 tqdm>=4.65.0
 python-dotenv>=1.0.0
 pyyaml>=6.0.0
+html5lib>=1.1  # For LSE data parsing
+beautifulsoup4>=4.9.0  # For LSE HTML parsing
+openpyxl>=3.0.0  # For TSX Excel file reading
+lxml>=4.9.0  # For faster HTML parsing
+country-converter>=1.0.0  # For country name resolution
+pycountry>=22.0.0  # For official ISO 3166 country data
 

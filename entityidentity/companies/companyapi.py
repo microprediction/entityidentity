@@ -4,7 +4,7 @@ This module provides a simple interface to company identity resolution.
 Implementation details are in the helper modules.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import pandas as pd
 
 from entityidentity.companies.companyidentity import (
@@ -12,6 +12,42 @@ from entityidentity.companies.companyidentity import (
     resolve_company as _resolve_company,
     load_companies as _load_companies,
 )
+
+
+def company_identifier(name: str, country: Optional[str] = None) -> Optional[str]:
+    """Get canonical global identifier for a company.
+    
+    This is the main entry point for company entity resolution.
+    Takes any variation of a company name and returns a stable, globally unique identifier.
+    
+    Args:
+        name: Company name in any format (e.g., "MSFT", "Microsoft Corp", "Microsoft")
+        country: Optional country code hint (e.g., "US", "GB") - improves accuracy
+        
+    Returns:
+        Canonical identifier string in format "name:country" (e.g., "Microsoft Corporation:US")
+        Returns None if no confident match found
+        
+    Examples:
+        >>> company_identifier("Apple")
+        'Apple Inc:US'
+        
+        >>> company_identifier("BHP", country="AU")
+        'BHP Group Limited:AU'
+        
+        >>> company_identifier("Anglo American")
+        'Anglo American plc:GB'
+    """
+    result = _resolve_company(name, country=country)
+    final = result.get("final")
+    
+    if final:
+        return get_company_id(final)
+    return None
+
+
+# Alias for backwards compatibility
+get_identifier = company_identifier
 
 
 def normalize_name(name: str) -> str:
@@ -161,6 +197,8 @@ def get_company_id(company: Dict[str, Any], safe: bool = False) -> str:
 
 
 __all__ = [
+    "company_identifier",    # Primary API
+    "get_identifier",        # Alias for backwards compatibility
     "normalize_name",
     "match_company",
     "resolve_company",

@@ -244,6 +244,12 @@ def filter_companies_llm(
     config = load_config(config_path)
     print(f"Loaded configuration")
     
+    # Filter out companies with empty names
+    original_count = len(df)
+    df = df[df['name'].notna() & (df['name'] != '')].copy()
+    if len(df) < original_count:
+        print(f"⚠️  Removed {original_count - len(df)} companies with empty names")
+    
     # Initialize LLM client
     if provider == "openai":
         try:
@@ -373,6 +379,12 @@ def filter_companies_llm(
     filtered = df.loc[results].copy()
     
     print(f"\n✅ Matched companies: {len(filtered):,} ({len(filtered)/len(df)*100:.1f}%)")
+    
+    # Deduplicate by (name, country) - keep first occurrence
+    original_filtered_count = len(filtered)
+    filtered = filtered.drop_duplicates(subset=['name', 'country'], keep='first')
+    if len(filtered) < original_filtered_count:
+        print(f"⚠️  Removed {original_filtered_count - len(filtered)} duplicate companies")
     
     # Show breakdown by category
     if 'value_chain_category' in filtered.columns:

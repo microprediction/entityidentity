@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="entityidentity",
-    version="0.0.2",
+    version="0.0.3",
     author="Peter Cotton",
     author_email="",
     description="Ontology / Entity Resolution",
@@ -35,6 +35,8 @@ setup(
         "requests>=2.25.0",
         "tqdm>=4.0.0",
         "pyyaml>=6.0.0",
+        "country-converter>=1.0.0",
+        "pycountry>=22.0.0",
     ],
     extras_require={
         "dev": ["pytest>=7.0.0"],

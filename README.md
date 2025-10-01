@@ -1,9 +1,11 @@
 # EntityIdentity [![Tests](https://github.com/microprediction/entityidentity-installtest/actions/workflows/tests_312.yml/badge.svg)](https://github.com/microprediction/entityidentity-installtest/actions/workflows/tests_312.yml) [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 
-Entity resolution and identity matching for companies.
+**Resolve any company name to a globally unique identifier.**
 
-Fast, in-memory company name resolution using fuzzy matching and smart normalization. No server required.
+Takes messy company names (tickers, abbreviations, variations) and returns stable canonical identifiers.
+
+Fast, in-memory resolution using fuzzy matching and smart normalization. No server required.
 
 ## Installation
 
@@ -14,77 +16,112 @@ pip install entityidentity
 ## Quick Start
 
 ```python
-from entityidentity import resolve_company, match_company
+from entityidentity import company_identifier, country_identifier
 
-# Simple matching - returns best match or None
-match = match_company("Apple Inc", country="US")
-if match:
-    print(f"Matched: {match['name']}")
-    print(f"Country: {match['country']}")
-    print(f"LEI: {match.get('lei', 'N/A')}")
+# Company resolution - main use case
+identifier = company_identifier("Apple")
+print(identifier)  # → 'Apple Inc:US'
 
-# Full resolution with details
-result = resolve_company("BHP Group", country="AU")
-print(result['final'])      # Best match
-print(result['decision'])   # How it was matched
-print(result['matches'])    # All top matches with scores
+# Works with variations
+company_identifier("Apple Inc.")      # → 'Apple Inc:US'
+company_identifier("Apple Computer")  # → 'Apple Inc:US'  
+company_identifier("BHP", "AU")       # → 'BHP Group Limited:AU'
+
+# Major mining companies
+company_identifier("Anglo American")  # → 'Anglo American plc:GB'
+company_identifier("Glencore")        # → 'Glencore plc:GB'
+company_identifier("Barrick Gold")    # → 'Barrick Gold Corporation:CA'
+
+# Returns None if no confident match
+company_identifier("Unknown XYZ")     # → None
+
+# Country resolution - robust with fuzzy matching
+country_identifier("USA")                # → 'US'
+country_identifier("United Kingdom")     # → 'GB'
+country_identifier("England")            # → 'GB'
+country_identifier("Holland")            # → 'NL'
+country_identifier("Untied States")      # → 'US' (typo tolerance!)
+
+# Batch resolution
+from entityidentity import country_identifiers
+country_identifiers(["USA", "Holland", "England"])  # → ['US', 'NL', 'GB']
 ```
+
+**That's it!** One function call returns a stable, globally unique identifier.
+
+## Why Use This?
+
+**Problem**: Company names are messy
+- Tickers: "BHP", "AAL", "ABX"
+- Variations: "Apple Inc", "Apple Inc.", "Apple Computer"
+- Formats: "APPLE INC" vs "Apple Inc" vs "Apple, Inc."
+
+**Solution**: Canonical identifiers
+```python
+company_identifier("Apple Inc.")     # All resolve to
+company_identifier("Apple Computer") # → 'Apple Inc:US'
+company_identifier("Apple")          # (same identifier)
+```
+
+**Current Dataset**: The pre-built dataset focuses on **mining, metals, and manufacturing** companies (~655 companies from GLEIF, Wikidata, and major stock exchanges). Perfect for supply chain analysis, mining industry research, and commodity tracking.
+
+### API Functions
+
+Two primary resolution functions:
+- **`company_identifier(name, country=None)`** - Resolve company names to canonical identifiers
+- **`country_identifier(name)`** - Resolve country names/codes to ISO 3166-1 alpha-2
+  - Multi-stage pipeline: `country_converter` → `pycountry` → fuzzy matching
+  - Handles typos, colloquialisms, and cultural variations (e.g., "Holland", "England")
+  - Configurable output formats (ISO2, ISO3, numeric)
+
+Batch processing:
+- **`country_identifiers(names)`** - Resolve multiple countries at once
+
+Plus supporting functions:
+- **`list_companies()`** - Browse available companies
+- **`extract_companies(text)`** - Find company mentions in text
+- **`normalize_name(name)`** - Normalize company names for matching
+
+For more data:
+- 🔄 Build your own dataset with `scripts/companies/build_filtered_dataset.sh`
+- 📦 Or use the API with your own company database
 
 ## Features
 
-- **Fast in-memory lookups**: <100ms for most queries
-- **Multiple data sources**: GLEIF LEI, Wikidata, stock exchanges
-- **Smart normalization**: Handles legal suffixes, punctuation, unicode
-- **Fuzzy matching**: RapidFuzz scoring with intelligent blocking
-- **No dependencies**: Works out of the box
+- **One function call**: `company_identifier(name, country)` returns stable ID
+- **Fast**: <100ms for most queries, no server required
+- **Smart matching**: Handles abbreviations, legal suffixes, unicode
+- **Multiple sources**: GLEIF LEI, Wikidata, stock exchanges
+- **Stable**: Same company always gets same identifier, regardless of source
 
-## Basic Usage
+## Advanced Usage
 
-### Normalize Company Names
-
-```python
-from entityidentity import normalize_name
-
-# Normalize for matching
-normalized = normalize_name("Apple Inc.")
-# Returns: "apple"
-
-normalized = normalize_name("BHP Group Ltd")
-# Returns: "bhp group"
-```
-
-### Match Company Names
+### Get Full Company Details
 
 ```python
 from entityidentity import match_company
 
-# Find best match
-match = match_company("Microsoft Corporation", country="US")
-if match:
-    print(f"Matched to: {match['name']}")
-    print(f"Confidence: {match['score']}")
+# Get complete company record
+company = match_company("Microsoft", country="US")
+if company:
+    print(f"Name: {company['name']}")
+    print(f"Country: {company['country']}")
+    print(f"LEI: {company.get('lei', 'N/A')}")
 ```
 
-### Resolve with Details
+### See Match Alternatives
 
 ```python
 from entityidentity import resolve_company
 
-# Get full resolution details
-result = resolve_company("Tesla", country="US")
+# Get all potential matches with scores
+result = resolve_company("Tesla")
+print(f"Best match: {result['final']['name']}")
+print(f"Confidence: {result['decision']}")
 
-# Access matched company
-company = result['final']
-print(f"Name: {company['name']}")
-print(f"Country: {company['country']}")
-
-# See decision type
-print(f"Decision: {result['decision']}")
-# Examples: 'auto_high_conf', 'llm_tiebreak', 'low_confidence'
-
-# Review all matches
+# Review alternatives
 for match in result['matches']:
-    print(f"  {match['name']} - Score: {match['score']}")
+    print(f"  {match['name']} ({match['country']}) - Score: {match['score']}")
 ```
 
 ## Data Sources
@@ -97,40 +134,181 @@ The package includes pre-built company data from:
 
 Sample data is included in the package for immediate use.
 
+## Company Identifiers
+
+### How Company Names are Derived
+
+Each company has a canonical identifier in the format: `{name}:{country}`
+
+**Examples:**
+- `Apple Inc:US`
+- `BHP Group Limited:AU`
+- `Anglo American plc:GB`
+
+### Country Codes
+
+We use **ISO 3166-1 alpha-2** standard (2-letter country codes):
+
+| Code | Country | Code | Country |
+|------|---------|------|---------|
+| US | United States | GB | United Kingdom |
+| AU | Australia | CA | Canada |
+| DE | Germany | FR | France |
+| IN | India | CN | China |
+| JP | Japan | BR | Brazil |
+| IT | Italy | ES | Spain |
+| MX | Mexico | SE | Sweden |
+
+[Full ISO 3166-1 list](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+
+### Name Canonicalization Process
+
+To ensure consistent identifiers regardless of load order or source formatting, company names go through canonicalization:
+
+1. **Remove commas before legal suffixes**: `"Tesla, Inc."` → `"Tesla Inc."`
+2. **Remove periods from legal suffixes**: `"Apple Inc."` → `"Apple Inc"`
+3. **Normalize unicode to ASCII**: `"Société Générale"` → `"Societe Generale"`
+4. **Keep essential characters**: Letters, numbers, spaces, hyphens, ampersands
+5. **Collapse multiple spaces**: `"BHP  Group"` → `"BHP Group"`
+
+This is handled by `canonicalize_name()` in `entityidentity.companies.companynormalize`.
+
+### Source Priority System
+
+When the same company appears in multiple data sources (e.g., GLEIF and ASX), we use **deterministic source priority** to ensure the same name is always selected, regardless of load order:
+
+**Priority (highest to lowest):**
+1. **GLEIF** (Priority 1) - Official legal names from regulatory filings
+2. **Wikidata** (Priority 2) - Crowdsourced but well-curated
+3. **Stock Exchanges** (Priority 3) - Often inconsistent formatting (ALL CAPS, etc.)
+   - ASX, LSE, TSX
+
+**Why This Matters:**
+
+Without priority, the identifier could drift based on load order:
+- Load GLEIF first: `"Apple Inc:US"` 
+- Load ASX first: `"APPLE INC:US"` ❌ Different identifier!
+
+With priority, GLEIF always wins:
+- Any load order: `"Apple Inc:US"` ✅ Stable identifier!
+
+This ensures that:
+- **Identifiers are stable** across different database builds
+- **Names are readable** (not ALL CAPS from exchanges)
+- **Load order doesn't matter** - same company always gets same name
+
+### Deduplication Strategy
+
+Companies are deduplicated in two passes:
+
+1. **By LEI** (if available): Companies with the same LEI are considered identical
+   - Keeps the record from the highest-priority source
+   
+2. **By (name_norm, country)**: For companies without LEI
+   - Uses normalized name matching
+   - Keeps the record from the highest-priority source
+
+This ensures that even if a company is listed on multiple exchanges, it appears only once with the most authoritative name.
+
 ## API Reference
+
+### Primary Functions
+
+#### `company_identifier(name, country=None)`
+
+**Primary company API**: Get canonical identifier for a company.
+
+**Parameters**:
+- `name` (str): Company name in any format
+- `country` (str, optional): ISO 2-letter country code hint (improves accuracy)
+
+**Returns**: String identifier in format `"name:country"` or `None` if no confident match
+
+**Examples**:
+```python
+company_identifier("Apple")                  # → 'Apple Inc:US'
+company_identifier("BHP", country="AU")      # → 'BHP Group Limited:AU'
+company_identifier("Anglo American")         # → 'Anglo American plc:GB'
+company_identifier("Glencore")               # → 'Glencore plc:GB'
+company_identifier("Unknown Company XYZ")    # → None (no match)
+```
+
+#### `country_identifier(name)`
+
+**Primary country API**: Resolve country names/codes to ISO 3166-1 alpha-2.
+
+**Parameters**:
+- `name` (str): Country name or code in any format
+
+**Returns**: ISO 3166-1 alpha-2 code (e.g., "US") or `None` if not recognized
+
+**Examples**:
+```python
+country_identifier("USA")              # → 'US'
+country_identifier("United Kingdom")   # → 'GB'
+country_identifier("Holland")          # → 'NL'
+country_identifier("England")          # → 'GB'
+country_identifier("Untied States")    # → 'US' (typo tolerance!)
+```
+
+**Advanced**: For full control, use `entityidentity.countries.fuzzycountry.country_identifier()` with options:
+- `to="ISO2"` (default), `"ISO3"`, or `"numeric"`
+- `fuzzy=True` (default) - enable typo tolerance
+- `fuzzy_threshold=85` (default) - minimum similarity score
+
+#### `country_identifiers(names)`
+
+**Batch country resolution**: Resolve multiple countries at once.
+
+**Parameters**:
+- `names` (iterable): List of country names or codes
+
+**Returns**: List of ISO codes (or `None` for unrecognized entries)
+
+**Example**:
+```python
+country_identifiers(["USA", "Holland", "England"])  # → ['US', 'NL', 'GB']
+```
+
+#### `get_identifier(name, country=None)`
+
+**Backwards compatibility alias** for `company_identifier()`. Use `company_identifier()` in new code.
 
 ### `match_company(name, country=None)`
 
-Simple interface to find the best matching company.
+Get full company record with all metadata.
 
 **Parameters**:
 - `name` (str): Company name to match
 - `country` (str, optional): ISO 2-letter country code
 
-**Returns**: Dictionary with matched company data, or `None` if no good match found.
+**Returns**: Dictionary with company data, or `None` if no good match found
+
+**Example**:
+```python
+company = match_company("BHP", "AU")
+# Returns: {'name': 'BHP Group Limited', 'country': 'AU', 'lei': '...', ...}
+```
 
 ### `resolve_company(name, country=None, **kwargs)`
 
-Full resolution with all details and match scores.
+Advanced: Full resolution with all match candidates and scores.
 
 **Parameters**:
 - `name` (str): Company name to resolve
 - `country` (str, optional): ISO 2-letter country code
-- Additional kwargs for advanced options
 
 **Returns**: Dictionary with:
-- `final`: Best matched company
-- `decision`: Decision type ('auto_high_conf', 'llm_tiebreak', etc.)
+- `final`: Best matched company (if confident)
+- `decision`: Decision type ('auto_high_conf', 'needs_hint_or_llm', etc.)
 - `matches`: List of all potential matches with scores
 
-### `normalize_name(name)`
-
-Normalize a company name for matching.
-
-**Parameters**:
-- `name` (str): Company name to normalize
-
-**Returns**: Normalized string (lowercase, no punctuation, legal suffixes removed)
+**Example**:
+```python
+result = resolve_company("Anglo American")
+print(result['final'])    # Best match
+print(result['matches'])  # All candidates with scores
+```
 
 ### `list_companies(country=None, search=None, limit=None, data_path=None)`
 
@@ -170,6 +348,41 @@ Load full company database into memory.
 - **Query speed**: <100ms for most lookups
 - **Database size**: ~10-50MB (compressed Parquet format)
 - **Memory usage**: ~200-500MB when loaded
+
+### Supporting Functions
+
+#### `list_companies(country=None, search=None, limit=None, data_path=None)`
+
+List companies with optional filtering.
+
+**Parameters**:
+- `country` (str, optional): ISO 2-letter country code filter
+- `search` (str, optional): Search term for company names
+- `limit` (int, optional): Maximum number of results
+- `data_path` (str, optional): Path to custom data file
+
+**Returns**: pandas DataFrame with filtered company data
+
+**Examples**:
+```python
+# List all US companies
+us = list_companies(country="US")
+
+# Search for mining companies
+mining = list_companies(search="mining")
+
+# Top 10 Australian companies
+top_au = list_companies(country="AU", limit=10)
+```
+
+#### `normalize_name(name)`
+
+Normalize company name for matching (removes legal suffixes, unicode, etc.)
+
+**Example**:
+```python
+normalize_name("Apple Inc.")  # → 'apple'
+```
 
 ## Advanced Usage
 
