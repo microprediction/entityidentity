@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="entityidentity",
-    version="0.0.1",
+    version="0.0.2",
     author="Peter Cotton",
     author_email="",
     description="Ontology / Entity Resolution",
