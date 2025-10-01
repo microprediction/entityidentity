@@ -182,7 +182,8 @@ def sample_wikidata_data() -> pd.DataFrame:
             'official_website': 'https://www.apple.com',
             'stock_ticker': 'AAPL',
             'inception': '1976',
-            'aliases': ['Apple Computer', 'Apple Computer, Inc.'],
+            'alias1': 'Apple Computer',
+            'alias2': 'Apple Computer, Inc.',
         },
         {
             'wikidata_qid': 'Q2283',
@@ -192,7 +193,9 @@ def sample_wikidata_data() -> pd.DataFrame:
             'official_website': 'https://www.microsoft.com',
             'stock_ticker': 'MSFT',
             'inception': '1975',
-            'aliases': ['Microsoft Corp', 'MSFT', 'Microsoft'],
+            'alias1': 'Microsoft Corp',
+            'alias2': 'MSFT',
+            'alias3': 'Microsoft',
         },
     ]
     return pd.DataFrame(data)

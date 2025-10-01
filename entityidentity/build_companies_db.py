@@ -169,18 +169,29 @@ def _normalize_wikidata(df: pd.DataFrame) -> pd.DataFrame:
     df['name'] = df['name'].apply(canonicalize_name)
     df['name_norm'] = df['name'].apply(normalize_name)
     
-    # Convert aliases list to flat columns (alias1, alias2, ..., alias5)
-    def extract_aliases(row):
-        aliases = row.get('aliases', []) if 'aliases' in df.columns else []
-        if not isinstance(aliases, list):
-            aliases = []
-        result = {}
-        for i in range(1, 6):
-            result[f'alias{i}'] = aliases[i-1] if i-1 < len(aliases) else None
-        return pd.Series(result)
+    # Convert aliases list to flat columns (alias1, alias2, ..., alias5) if needed
+    # Check if alias columns already exist (e.g., from sample data)
+    has_alias_cols = 'alias1' in df.columns
     
-    alias_cols = df.apply(extract_aliases, axis=1)
-    df = pd.concat([df, alias_cols], axis=1)
+    if not has_alias_cols:
+        # Extract from 'aliases' list column
+        def extract_aliases(row):
+            aliases = row.get('aliases', []) if 'aliases' in df.columns else []
+            if not isinstance(aliases, list):
+                aliases = []
+            result = {}
+            for i in range(1, 6):
+                result[f'alias{i}'] = aliases[i-1] if i-1 < len(aliases) else None
+            return pd.Series(result)
+        
+        alias_cols = df.apply(extract_aliases, axis=1)
+        df = pd.concat([df, alias_cols], axis=1)
+    else:
+        # Ensure all alias1-alias5 columns exist
+        for i in range(1, 6):
+            col = f'alias{i}'
+            if col not in df.columns:
+                df[col] = None
     
     df['address'] = None
     df['city'] = None

@@ -101,10 +101,15 @@ class TestWikidataLoader:
             assert qid.startswith('Q'), f"Q-ID should start with Q: {qid}"
             assert qid[1:].isdigit(), f"Q-ID should be Q followed by digits: {qid}"
         
-        # Check aliases are lists
-        if 'aliases' in df.columns:
-            for aliases in df['aliases']:
-                assert isinstance(aliases, list), "Aliases should be a list"
+        # Check aliases are in flat columns (alias1-alias5)
+        alias_columns = [col for col in df.columns if col.startswith('alias')]
+        assert len(alias_columns) > 0, "Should have at least one alias column"
+        # Aliases should be strings or NaN, not lists
+        for col in alias_columns:
+            if col in df.columns:
+                non_null = df[df[col].notna()][col]
+                for alias in non_null:
+                    assert isinstance(alias, str), f"Alias should be a string: {alias}"
     
     def test_extract_qid(self):
         """Test Q-ID extraction from URLs."""
@@ -116,9 +121,10 @@ class TestWikidataLoader:
         """Test that sample data includes aliases."""
         df = sample_wikidata_data()
         
-        # At least one company should have aliases
-        has_aliases = any(len(aliases) > 0 for aliases in df['aliases'])
-        assert has_aliases, "Sample data should include companies with aliases"
+        # At least one company should have aliases (check alias1 column)
+        if 'alias1' in df.columns:
+            has_aliases = df['alias1'].notna().any()
+            assert has_aliases, "Sample data should include companies with aliases"
     
     @pytest.mark.skipif(not TEST_LIVE, reason="Live API testing disabled")
     def test_load_wikidata_live(self):
@@ -298,7 +304,7 @@ class TestBuildScript:
         
         # Check all required columns exist
         required = ['name', 'name_norm', 'country', 'lei', 'wikidata_qid', 
-                   'aliases', 'source']
+                   'alias1', 'source']
         for col in required:
             assert col in df.columns, f"Missing column: {col}"
         
