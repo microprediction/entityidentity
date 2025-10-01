@@ -16,6 +16,86 @@ metals:
     notes: "Element 78, density 21.45 g/cm³"
     sources: ["IUPAC"]
 
+  - name: "Palladium"
+    symbol: "Pd"
+    metal_key: "palladium"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Pd"
+    notes: "Element 46"
+    sources: ["IUPAC"]
+
+  - name: "Rhodium"
+    symbol: "Rh"
+    metal_key: "rhodium"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Rh"
+    notes: "Element 45"
+    sources: ["IUPAC"]
+
+  - name: "Ruthenium"
+    symbol: "Ru"
+    metal_key: "ruthenium"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Ru"
+    notes: "Element 44"
+    sources: ["IUPAC"]
+
+  - name: "Iridium"
+    symbol: "Ir"
+    metal_key: "iridium"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Ir"
+    notes: "Element 77"
+    sources: ["IUPAC"]
+
+  - name: "Osmium"
+    symbol: "Os"
+    metal_key: "osmium"
+    formula: null
+    code: null
+    category_bucket: "pgm"
+    cluster_id: "pgm_complex"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Os"
+    notes: "Element 76"
+    sources: ["IUPAC"]
+
   - name: "Gold"
     symbol: "Au"
     metal_key: "gold"
@@ -30,6 +110,22 @@ metals:
     aliases:
       - "Au"
     notes: "Element 79, recovered from Cu anode slimes"
+    sources: ["IUPAC", "USGS"]
+
+  - name: "Silver"
+    symbol: "Ag"
+    metal_key: "silver"
+    formula: null
+    code: null
+    category_bucket: "precious"
+    cluster_id: "lead_zinc_chain"
+    default_unit: "toz"
+    default_basis: "$/toz"
+    hs6: null
+    pra_hint: null
+    aliases:
+      - "Ag"
+    notes: "Element 47, by-product of Pb-Zn smelting"
     sources: ["IUPAC", "USGS"]
 
   - name: "Copper"
