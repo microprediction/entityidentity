@@ -1,6 +1,14 @@
-"""Company identity resolution and matching"""
+"""Company identity resolution and matching.
 
-# User-facing API
+Architecture:
+- companyapi.py: Public user-facing API (clean interfaces)
+- companyidentity.py: Implementation details (not exposed directly)
+- companyextractor.py: Text extraction utilities (used by API)
+- companynormalize.py: Name normalization for display/identifiers
+- Data loaders: Direct access for advanced users
+"""
+
+# User-facing API (clean wrappers around implementation)
 from entityidentity.companies.companyapi import (
     normalize_name,
     match_company,
