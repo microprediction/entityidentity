@@ -45,6 +45,13 @@ country_identifier("Untied States")      # → 'US' (typo tolerance!)
 # Batch resolution
 from entityidentity import country_identifiers
 country_identifiers(["USA", "Holland", "England"])  # → ['US', 'NL', 'GB']
+
+# Metal resolution - NEW! Resolve metal names, symbols, and forms
+from entityidentity import metal_identifier
+metal_identifier("Pt")                   # → {'name': 'Platinum', 'symbol': 'Pt', ...}
+metal_identifier("copper")               # → {'name': 'Copper', 'symbol': 'Cu', ...}
+metal_identifier("APT 88.5%")           # → {'name': 'Ammonium paratungstate', ...}
+metal_identifier("lithium carbonate")    # → {'name': 'Lithium carbonate', 'formula': 'Li2CO3', ...}
 ```
 
 **That's it!** One function call returns a stable, globally unique identifier.
@@ -67,12 +74,16 @@ company_identifier("Apple")          # (same identifier)
 
 ### API Functions
 
-Two primary resolution functions:
+Three primary resolution functions:
 - **`company_identifier(name, country=None)`** - Resolve company names to canonical identifiers
 - **`country_identifier(name)`** - Resolve country names/codes to ISO 3166-1 alpha-2
   - Multi-stage pipeline: `country_converter` → `pycountry` → fuzzy matching
   - Handles typos, colloquialisms, and cultural variations (e.g., "Holland", "England")
   - Configurable output formats (ISO2, ISO3, numeric)
+- **`metal_identifier(name, category=None, cluster=None)`** - Resolve metal names/symbols to canonical forms
+  - 50 metals: elements, alloys, compounds (Li, Li₂CO₃, FeCr, APT, etc.)
+  - Supply chain clustering (porphyry copper → Mo, Re, Se, Te)
+  - Commercial forms and trade specifications
 
 Batch processing:
 - **`country_identifiers(names)`** - Resolve multiple countries at once
@@ -81,6 +92,9 @@ Plus supporting functions:
 - **`list_companies()`** - Browse available companies
 - **`extract_companies(text)`** - Find company mentions in text
 - **`normalize_name(name)`** - Normalize company names for matching
+- **`list_metals(category=None, cluster=None)`** - List metals by category/cluster
+- **`match_metal(name, k=5)`** - Get top-K metal candidates with scores
+- **`extract_metals_from_text(text)`** - Extract metal references from text
 
 For more data:
 - 🔄 Build your own dataset with `scripts/companies/build_filtered_dataset.sh`

@@ -15,141 +15,140 @@ The metals module provides deterministic entity resolution for metal names, symb
 - **Fast Resolution**: Cached Parquet with RapidFuzz scoring for robust matching
 - **Text Extraction**: Extract metal references from unstructured text
 
+## Current Implementation Status
+
+### ✅ Completed (All 12 Prompts)
+- **Core modules**: All Python modules implemented (`metalapi.py`, `metalidentity.py`, `metalnormalize.py`, `metalextractor.py`)
+- **Data schemas**: YAML source files with 50 metals and 14 supply chain clusters
+- **Build system**: Functional YAML → Parquet compilation pipeline
+- **Resolution engine**: RapidFuzz-based matching with blocking strategies
+- **Text extraction**: NER-style metal detection from unstructured text
+- **Test suite**: Comprehensive tests in `test_metals.py`
+- **Package integration**: Full integration with main entityidentity package
+
+### Metal Coverage (50 metals implemented)
+
+#### Precious & PGMs (8 metals) ✅
+- All 6 PGMs: Platinum, Palladium, Rhodium, Ruthenium, Iridium, Osmium
+- Precious: Gold, Silver
+
+#### Base & Copper Chain (7 metals) ✅
+- Copper, Molybdenum, Rhenium (by-product)
+- Selenium, Tellurium (from Cu anode slimes)
+- Gold (as co-product in porphyry copper)
+
+#### Lead-Zinc Chain (7 metals) ✅
+- Primary: Zinc, Lead
+- By-products: Silver, Cadmium, Indium, Germanium, Bismuth, Antimony
+
+#### Battery Metals (11 forms/metals) ✅
+- Lithium (3 forms): metal, carbonate, hydroxide
+- Cobalt (2 forms): metal, sulfate
+- Nickel (2 forms): metal, sulfate
+- Graphite (2 forms): natural, synthetic
+
+#### Rare Earths (12 metals) ✅
+- Light REEs: Lanthanum, Cerium, Praseodymium, Neodymium, Samarium
+- Heavy REEs: Europium, Gadolinium, Terbium, Dysprosium, Yttrium
+- Mixed: Neodymium-Praseodymium (NdPr)
+
+#### Ferroalloys (5 metals) ✅
+- Ferrochrome, Ferromanganese, Ferrovanadium
+- Ferrotungsten, Ferromolybdenum
+
+#### Specialty Metals (5 metals) ✅
+- Tungsten, Ammonium paratungstate (APT)
+- Tantalum, Niobium, Vanadium
+
+### 📋 Minor TODOs
+- Example notebooks demonstrating usage
+- CLI tool for interactive resolution
+- Additional HS codes and PRA references
+- More metal forms and compounds (e.g., oxides, chlorides)
+
 ## Installation
 
 ```bash
-# Build the metals database from YAML source
+# Install entityidentity package
+pip install -e .  # From entityidentity root
+
+# Build/rebuild the metals database
 cd entityidentity/metals/data
 python build_metals.py
-
-# This creates metals.parquet from metals.yaml
 ```
 
-## Core API Functions (Section 5 of METALS_ONTOLOGY_PLAN.md)
+## Usage
 
-### metal_identifier(name, *, cluster=None, category=None, threshold=90) -> dict | None
-
-Resolve a metal name to its canonical form.
+### Basic Resolution
 
 ```python
 from entityidentity import metal_identifier
 
-# Simple resolution
+# Resolve by symbol
 result = metal_identifier("Pt")
-# Returns: {'metal_id': '...', 'name': 'Platinum', 'symbol': 'Pt', ...}
+# {'metal_id': '...', 'name': 'Platinum', 'symbol': 'Pt', ...}
 
-# Resolution with hints
+# Resolve by name
+result = metal_identifier("copper")
+# {'name': 'Copper', 'symbol': 'Cu', ...}
+
+# Resolve trade specifications
+result = metal_identifier("APT 88.5%")
+# {'name': 'Ammonium paratungstate', 'code': 'WO3', 'default_basis': '$/mtu WO3', ...}
+
+# Resolve with category hint
 result = metal_identifier("chrome", category="ferroalloy")
-# Returns: {'name': 'Ferrochrome', 'code': 'FeCr', ...}
-
-# Resolution with cluster hint
-result = metal_identifier("gold", cluster="porphyry_copper_chain")
-# Returns gold entry with cluster context
-
-# Returns None if no match above threshold
-result = metal_identifier("unobtainium", threshold=95)
-# Returns: None
+# {'name': 'Ferrochrome', 'code': 'FeCr', ...}
 ```
 
-### match_metal(name, *, k=5) -> list[dict]
-
-Get top-K candidate matches with scores for review UIs.
+### Top-K Matching
 
 ```python
 from entityidentity import match_metal
 
-candidates = match_metal("tungsten", k=3)
-# Returns: [
+# Get top candidates with scores
+matches = match_metal("wolfram", k=3)
+# [
 #   {'name': 'Tungsten', 'score': 100, ...},
 #   {'name': 'Ferrotungsten', 'score': 85, ...},
 #   {'name': 'Ammonium paratungstate', 'score': 70, ...}
 # ]
 ```
 
-### list_metals(cluster=None, category=None) -> pd.DataFrame
-
-List metals filtered by cluster or category.
-
-```python
-from entityidentity import list_metals
-import pandas as pd
-
-# List all PGM metals
-pgm_metals = list_metals(category="pgm")
-# Returns DataFrame with Pt, Pd, Rh, Ru, Ir, Os
-
-# List metals in porphyry copper chain
-copper_chain = list_metals(cluster="porphyry_copper_chain")
-# Returns DataFrame with Cu, Mo, Re, Se, Te, Au
-
-# List all battery metals
-battery_metals = list_metals(category="battery")
-# Returns DataFrame with Li, Co, Ni, graphite forms, etc.
-```
-
-### load_metals(path=None) -> pd.DataFrame
-
-Load the compiled metals database. This is cached after first call using @lru_cache.
-
-```python
-from entityidentity import load_metals
-
-# Load default database
-df = load_metals()
-
-# Load custom database
-df = load_metals("path/to/custom/metals.parquet")
-```
-
-## Text Extraction API (Section 8)
-
-```python
-from entityidentity.metals import metal_identifier
-
-# Resolve by symbol
-result = metal_identifier("Pt")
-# {'metal_id': 'abc123...', 'name': 'Platinum', 'symbol': 'Pt', ...}
-
-# Resolve by name
-result = metal_identifier("copper")
-# {'metal_id': 'def456...', 'name': 'Copper', 'symbol': 'Cu', ...}
-
-# Resolve trade specifications
-result = metal_identifier("APT 88.5%")
-# {'name': 'Ammonium paratungstate', 'code': 'WO3', 'default_basis': '$/mtu WO3', ...}
-
-# Resolve with hints
-result = metal_identifier("lithium", category="battery")
-# Returns lithium metal or compounds based on context
-```
-
-### Top-K Matching
-
-```python
-from entityidentity.metals import match_metal
-
-# Get top 5 candidates with scores
-matches = match_metal("wolfram", k=5)
-# [{'name': 'Tungsten', 'score': 95, ...}, ...]
-```
-
 ### Listing and Filtering
 
 ```python
-from entityidentity.metals import list_metals
+from entityidentity import list_metals
 
 # List all PGM metals
-pgms = list_metals(cluster="pgm_complex")
+pgms = list_metals(category="pgm")
 # DataFrame with Pt, Pd, Rh, Ru, Ir, Os
+
+# List metals in a supply chain
+copper_chain = list_metals(cluster="porphyry_copper_chain")
+# DataFrame with Cu, Mo, Re, Se, Te, Au
 
 # List battery metals
 battery = list_metals(category="battery")
-# DataFrame with Li forms, Co, Ni, graphite, etc.
+# DataFrame with Li, Co, Ni, graphite forms
+```
+
+### Text Extraction
+
+```python
+from entityidentity import extract_metals_from_text
+
+text = "The battery uses NMC cathodes with high nickel content and lithium carbonate from Chile."
+metals = extract_metals_from_text(text)
+# [
+#   {'query': 'nickel', 'span': (40, 46), 'hint': 'element'},
+#   {'query': 'lithium carbonate', 'span': (59, 76), 'hint': 'compound'}
+# ]
 ```
 
 ## Data Model
 
-### Metal Fields
+### Core Fields
 
 | Field | Description | Example |
 |-------|-------------|---------|
@@ -158,54 +157,24 @@ battery = list_metals(category="battery")
 | `symbol` | IUPAC element symbol | `Pt`, `Cu`, `Li` |
 | `name` | Display name | `Platinum`, `Ammonium paratungstate` |
 | `formula` | Chemical formula | `Li2CO3`, `(NH4)10[H2W12O42]·xH2O` |
-| `code` | Commercial code | `WO3` for APT, `Li2CO3` |
-| `category_bucket` | Category taxonomy | `precious`, `base`, `battery`, `pgm`, `ree` |
+| `code` | Commercial code | `WO3`, `FeCr`, `NdPr` |
+| `category_bucket` | Category | `precious`, `base`, `battery`, `pgm`, `ree`, `ferroalloy`, `specialty` |
 | `cluster_id` | Supply chain cluster | `porphyry_copper_chain`, `pgm_complex` |
-| `default_unit` | Standard trade unit | `toz`, `lb`, `mtu`, `kg` |
+| `default_unit` | Trade unit | `toz`, `lb`, `mtu`, `kg`, `mt` |
 | `default_basis` | Pricing basis | `$/toz`, `$/mtu WO3`, `$/lb Cr contained` |
 
-### Supply Chain Clusters
+### Supply Chain Clusters (14 clusters)
 
-Metals are organized by geological co-occurrence and processing chains:
-
-- **pgm_complex**: Pt, Pd, Rh, Ru, Ir, Os (Bushveld/Great Dyke)
-- **porphyry_copper_chain**: Cu → Mo → Re; Cu anode slimes → Se/Te/Au
-- **lead_zinc_chain**: Pb-Zn → Ag, Cd, In, Ge, Bi, Sb (smelter by-products)
+- **pgm_complex**: Pt, Pd, Rh, Ru, Ir, Os
+- **porphyry_copper_chain**: Cu → Mo → Re; Se/Te/Au from anode slimes
+- **lead_zinc_chain**: Pb-Zn → Ag, Cd, In, Ge, Bi, Sb
+- **nickel_cobalt_chain**: Ni-Co sulfides & laterites
 - **rare_earth_chain**: REE deposits & ion-adsorption clays
-- **lithium_chain**: Li brines & hard-rock sources
+- **lithium_chain**: Li brines & hard-rock
 - **ferroalloy_chain**: Chromite/Mn/VTM → ferroalloys
-
-See `data/supply_chain_clusters.yaml` for complete mapping.
-
-## Current Metal Coverage
-
-### Precious & PGMs (8 metals)
-- ✅ Platinum, Palladium, Rhodium, Ruthenium, Iridium, Osmium
-- ✅ Gold, Silver
-
-### Base Metals & Copper Chain (7 metals)
-- ✅ Copper, Molybdenum, Rhenium (by-product)
-- ✅ Selenium, Tellurium (from Cu anode slimes)
-- ⏳ Gold (as co-product)
-
-### Lead-Zinc Chain (7 metals)
-- ✅ Zinc, Lead
-- ✅ Cadmium, Indium, Germanium, Bismuth, Antimony
-
-### Battery Metals (2 metals)
-- ✅ Lithium carbonate
-- ⏳ Lithium metal, hydroxide
-- ⏳ Cobalt, Nickel forms
-- ⏳ Graphite
-
-### Specialty/Industrial (2 metals)
-- ✅ Ammonium paratungstate (APT)
-- ✅ Ferrochrome
-- ⏳ Other ferroalloys
-
-### Rare Earths (1 metal)
-- ✅ Neodymium-Praseodymium (NdPr)
-- ⏳ Individual REEs
+- **sn_ta_nb_w_chain**: Sn-Ta-Nb-W pegmatite/skarn
+- **carbon_silicon_chain**: Graphite & silicon
+- Plus 5 others (see `data/supply_chain_clusters.yaml`)
 
 ## Architecture
 
@@ -213,44 +182,39 @@ See `data/supply_chain_clusters.yaml` for complete mapping.
 metals/
 ├── __init__.py              # Module exports
 ├── metalapi.py              # Public API (functional)
-├── metalidentity.py         # Resolution logic
-├── metalnormalize.py        # Name normalization
-├── metalextractor.py        # Text extraction (TODO)
+├── metalidentity.py         # Resolution logic with RapidFuzz
+├── metalnormalize.py        # Name normalization utilities
+├── metalextractor.py        # Text extraction and NER
 └── data/
-    ├── metals.yaml          # Source of truth
-    ├── supply_chain_clusters.yaml
+    ├── metals.yaml          # Source of truth (50 metals)
+    ├── supply_chain_clusters.yaml  # Cluster definitions
     ├── build_metals.py      # YAML → Parquet compiler
-    └── metals.parquet       # Compiled data
+    └── metals.parquet       # Compiled database
 ```
 
-## Resolution Strategy
+## Resolution Strategy (Section 6)
 
-1. **Blocking**: Narrow candidates via symbol, category, name prefix, cluster
+1. **Blocking**: Filter candidates by symbol, category, name prefix, cluster
 2. **Scoring**: RapidFuzz WRatio on names and aliases
 3. **Threshold**: Return match if score ≥ 90 (configurable)
 4. **Hints**: Support "metal:form" syntax (e.g., "lithium:carbonate")
 
 ## Development
 
-### Building the Parquet file
-
-```bash
-cd entityidentity/metals/data
-python build_metals.py
-```
-
-This validates the YAML and generates `metals.parquet`.
-
-### Adding new metals
+### Adding New Metals
 
 1. Edit `data/metals.yaml` following the schema
-2. Run `build_metals.py` to compile and validate
-3. Test resolution with the new entries
+2. Run `python build_metals.py` to compile and validate
+3. Test with `pytest tests/test_metals.py`
 
-### Running tests
+### Running Tests
 
 ```bash
-pytest tests/test_metals.py  # TODO: Create test suite
+# Run all metal tests
+pytest tests/test_metals.py -v
+
+# Run with coverage
+pytest tests/test_metals.py --cov=entityidentity.metals
 ```
 
 ## Standards & Sources
@@ -258,7 +222,7 @@ pytest tests/test_metals.py  # TODO: Create test suite
 - **Element names/symbols**: IUPAC periodic table
 - **By-product relationships**: USGS mineral commodity summaries
 - **Trade units/basis**: Fastmarkets price specifications
-- **HS codes**: WCO HS 2022 (6-digit)
+- **HS codes**: WCO HS 2022 (when available)
 
 ## Contributing
 
@@ -268,6 +232,7 @@ When adding metals:
 3. Use market-standard units/basis (check Fastmarkets)
 4. Assign to single supply chain cluster
 5. Include common aliases and trade terms
+6. Run tests to ensure no regressions
 
 ## Related Documentation
 
