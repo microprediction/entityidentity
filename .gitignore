@@ -215,3 +215,5 @@ build.log
 
 # The filtered mining/energy dataset (~6MB, 50K companies) IS included in the package
 # Users get it immediately after pip install - no building required!
+.DS_Store
+**/.DS_Store

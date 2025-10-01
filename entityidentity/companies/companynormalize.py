@@ -1,7 +1,8 @@
-"""Company name normalization for canonical identifiers.
+"""Company name normalization utilities.
 
-This module provides robust normalization to ensure company names can
-be safely used in identifiers without special character conflicts.
+Contains two complementary utilities:
+- canonicalize_name: for safe identifier strings (keep case & readability)
+- normalize_name: for fuzzy matching (lowercased, simplified)
 """
 
 import re
@@ -102,5 +103,45 @@ def validate_canonical_name(name: str) -> bool:
     return bool(re.match(r'^[A-Za-z0-9\s\-&]+$', name))
 
 
-__all__ = ['canonicalize_name', 'validate_canonical_name']
+# Common legal suffixes across jurisdictions (for normalize_name)
+LEGAL_SUFFIXES = (
+    r"(incorporated|corporation|inc|corp|co|company|ltd|plc|sa|ag|gmbh|spa|oyj|kgaa|"
+    r"sarl|s\.r\.o\.|pte|llc|lp|bv|nv|ab|as|oy|sas|s\.a\.|s\.p\.a\.|"
+    r"limited|limitada|ltda|l\.l\.c\.|jsc|p\.l\.c\.)"
+)
+LEGAL_RE = re.compile(rf"\b{LEGAL_SUFFIXES}\b\.?", re.IGNORECASE)
+
+
+def normalize_name(name: str) -> str:
+    """Normalize company name for fuzzy matching.
+    
+    Steps:
+    1. Unicode normalization (NFKD) and ASCII transliteration
+    2. Lowercase
+    3. Remove legal suffixes (before punctuation removal)
+    4. Remove punctuation (keep &, -, alphanumeric)
+    5. Collapse whitespace
+    """
+    if not name:
+        return ""
+    # Unicode normalization and ASCII conversion
+    name = unicodedata.normalize("NFKD", name)
+    name = name.encode("ascii", "ignore").decode("ascii")
+    # Lowercase
+    name = name.lower()
+    # Remove legal suffixes first
+    name = LEGAL_RE.sub("", name)
+    # Remove punctuation except &, -, and alphanumeric
+    name = re.sub(r"[^a-z0-9&\-\s]", " ", name)
+    # Collapse whitespace
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+__all__ = [
+    'canonicalize_name',
+    'validate_canonical_name',
+    'normalize_name',
+    'LEGAL_RE',
+]
 

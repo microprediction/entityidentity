@@ -37,13 +37,21 @@ Ensure that data files in /table are included in the package distribution so peo
 
 # Module names
 
-Use hyphens for function names but not module names
+Use underscores for function names but not module names
 
 e.g. 
 
   from  companiesfiltered import company_filter 
 
+Prefer matching module and function pairs so we don't have to guess location
 
-# External APIs
+  from blahboo import blah_boo 
+
+
+# External APIs and large downloads
 
  - Use backoff if necessary
+ - Use incremental saves with atomic save for long running jobs
+ - Use tqdm to show progress
+
+# 

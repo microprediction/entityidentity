@@ -7,10 +7,13 @@ Implementation details are in the helper modules.
 from typing import List, Optional, Dict, Any, Tuple
 import pandas as pd
 
-from entityidentity.companies.companyidentity import (
+from entityidentity.companies.companynormalize import (
     normalize_name as _normalize_name,
+)
+from entityidentity.companies.companyresolver import (
     resolve_company as _resolve_company,
     load_companies as _load_companies,
+    list_companies as _list_companies,
 )
 
 
@@ -94,38 +97,8 @@ def list_companies(
     search: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> pd.DataFrame:
-    """List companies with optional filtering.
-    
-    Args:
-        country: Filter by country code (e.g., "US", "GB")
-        search: Search term for company names
-        limit: Maximum number of results
-        
-    Returns:
-        DataFrame with company data
-        
-    Examples:
-        >>> list_companies(country="US")
-        >>> list_companies(search="mining")
-        >>> list_companies(country="AU", limit=10)
-    """
-    df = _load_companies()
-    
-    if country:
-        df = df[df['country'] == country.upper()]
-    
-    if search:
-        search_lower = search.lower()
-        mask = (
-            df['name'].str.lower().str.contains(search_lower, na=False) |
-            df['name_norm'].str.contains(search_lower, na=False)
-        )
-        df = df[mask]
-    
-    if limit:
-        df = df.head(limit)
-    
-    return df
+    """List companies with optional filtering (delegates to companyresolver)."""
+    return _list_companies(country=country, search=search, limit=limit)
 
 
 def extract_companies(
