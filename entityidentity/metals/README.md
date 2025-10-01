@@ -13,40 +13,95 @@ The metals module provides deterministic entity resolution for metal names, symb
 - **Commercial Standards**: Proper units and pricing basis (e.g., APT in $/mtu WO₃, ferrochrome in $/lb Cr contained)
 - **Multi-form Support**: Elements, compounds, alloys (e.g., Li metal vs Li₂CO₃, tungsten vs APT)
 - **Fast Resolution**: Cached Parquet with RapidFuzz scoring for robust matching
-
-## Current Implementation Status
-
-### ✅ Completed
-- Core module structure and APIs (`metalapi.py`, `metalidentity.py`, `metalnormalize.py`)
-- YAML source schemas (`metals.yaml`, `supply_chain_clusters.yaml`)
-- Build system (`build_metals.py`) compiling YAML → Parquet
-- Resolution logic with blocking and RapidFuzz scoring
-- Initial seed data (26 metals across multiple clusters)
-
-### 🚧 In Progress
-- Expanding metal coverage (currently 26 of planned 60+ metals)
-- Adding more rare earth elements
-- Ferroalloys expansion
-- Battery metals forms
-
-### 📋 TODO
-- Text extraction module (`metalextractor.py`)
-- Comprehensive test suite
-- Integration with main entityidentity package
-- Example notebooks
-- HS codes and PRA price references
+- **Text Extraction**: Extract metal references from unstructured text
 
 ## Installation
 
-The metals module is part of the entityidentity package:
-
 ```bash
-pip install -e .  # From entityidentity root
+# Build the metals database from YAML source
+cd entityidentity/metals/data
+python build_metals.py
+
+# This creates metals.parquet from metals.yaml
 ```
 
-## Usage
+## Core API Functions (Section 5 of METALS_ONTOLOGY_PLAN.md)
 
-### Basic Resolution
+### metal_identifier(name, *, cluster=None, category=None, threshold=90) -> dict | None
+
+Resolve a metal name to its canonical form.
+
+```python
+from entityidentity import metal_identifier
+
+# Simple resolution
+result = metal_identifier("Pt")
+# Returns: {'metal_id': '...', 'name': 'Platinum', 'symbol': 'Pt', ...}
+
+# Resolution with hints
+result = metal_identifier("chrome", category="ferroalloy")
+# Returns: {'name': 'Ferrochrome', 'code': 'FeCr', ...}
+
+# Resolution with cluster hint
+result = metal_identifier("gold", cluster="porphyry_copper_chain")
+# Returns gold entry with cluster context
+
+# Returns None if no match above threshold
+result = metal_identifier("unobtainium", threshold=95)
+# Returns: None
+```
+
+### match_metal(name, *, k=5) -> list[dict]
+
+Get top-K candidate matches with scores for review UIs.
+
+```python
+from entityidentity import match_metal
+
+candidates = match_metal("tungsten", k=3)
+# Returns: [
+#   {'name': 'Tungsten', 'score': 100, ...},
+#   {'name': 'Ferrotungsten', 'score': 85, ...},
+#   {'name': 'Ammonium paratungstate', 'score': 70, ...}
+# ]
+```
+
+### list_metals(cluster=None, category=None) -> pd.DataFrame
+
+List metals filtered by cluster or category.
+
+```python
+from entityidentity import list_metals
+import pandas as pd
+
+# List all PGM metals
+pgm_metals = list_metals(category="pgm")
+# Returns DataFrame with Pt, Pd, Rh, Ru, Ir, Os
+
+# List metals in porphyry copper chain
+copper_chain = list_metals(cluster="porphyry_copper_chain")
+# Returns DataFrame with Cu, Mo, Re, Se, Te, Au
+
+# List all battery metals
+battery_metals = list_metals(category="battery")
+# Returns DataFrame with Li, Co, Ni, graphite forms, etc.
+```
+
+### load_metals(path=None) -> pd.DataFrame
+
+Load the compiled metals database. This is cached after first call using @lru_cache.
+
+```python
+from entityidentity import load_metals
+
+# Load default database
+df = load_metals()
+
+# Load custom database
+df = load_metals("path/to/custom/metals.parquet")
+```
+
+## Text Extraction API (Section 8)
 
 ```python
 from entityidentity.metals import metal_identifier
