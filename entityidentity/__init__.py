@@ -24,14 +24,16 @@ __version__ = "0.0.1"
 # Deprecated: entityidentity.companies.companyidentity (use companyapi instead)
 
 from .companies.companyapi import (
-    company_identifier,  # Primary API - get canonical identifier
-    get_identifier,      # Alias for backwards compatibility
-    normalize_name,      # Normalize company names for matching
-    match_company,       # Get best matching company with details
-    resolve_company,     # Get resolution with all candidates and scores
-    list_companies,      # List/filter companies in database
-    extract_companies,   # Extract companies from text
-    get_company_id,      # Format company as identifier string
+    company_identifier,      # Primary API - get canonical identifier
+    get_identifier,          # Alias for backwards compatibility
+    normalize_company_name,  # Normalize company names for matching
+    canonicalize_company_name, # Canonicalize names for display/identifiers
+    normalize_name,          # DEPRECATED - use normalize_company_name
+    match_company,           # Get best matching company with details
+    resolve_company,         # Get resolution with all candidates and scores
+    list_companies,          # List/filter companies in database
+    extract_companies,       # Extract companies from text
+    get_company_id,          # Format company as identifier string
 )
 
 # ============================================================================
@@ -74,13 +76,15 @@ __all__ = [
     # ========================================================================
     # Company Resolution
     # ========================================================================
-    "match_company",        # Get full company details
-    "resolve_company",      # Get resolution with scores
-    "normalize_name",       # Normalize company names
-    "extract_companies",    # Extract companies from text
-    "list_companies",       # List companies in database
-    "get_company_id",       # Format company as ID string
-    "get_identifier",       # Alias for company_identifier (backwards compat)
+    "match_company",             # Get full company details
+    "resolve_company",           # Get resolution with scores
+    "normalize_company_name",    # Normalize names for matching
+    "canonicalize_company_name", # Canonicalize names for display
+    "normalize_name",            # DEPRECATED - use normalize_company_name
+    "extract_companies",         # Extract companies from text
+    "list_companies",            # List companies in database
+    "get_company_id",            # Format company as ID string
+    "get_identifier",            # Alias for company_identifier (backwards compat)
 
     # ========================================================================
     # Country Resolution

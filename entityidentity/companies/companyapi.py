@@ -9,6 +9,7 @@ import pandas as pd
 
 from entityidentity.companies.companynormalize import (
     normalize_company_name as _normalize_company_name,
+    canonicalize_company_name as _canonicalize_company_name,
 )
 from entityidentity.companies.companyresolver import (
     resolve_company as _resolve_company,
@@ -53,8 +54,66 @@ def company_identifier(name: str, country: Optional[str] = None) -> Optional[str
 get_identifier = company_identifier
 
 
+def normalize_company_name(name: str) -> str:
+    """Normalize company name for fuzzy matching.
+
+    This function performs aggressive normalization for matching purposes:
+    - Converts to lowercase
+    - Removes legal suffixes (Inc, Corp, Ltd, etc.)
+    - Removes punctuation
+    - Normalizes whitespace
+
+    Args:
+        name: Company name to normalize
+
+    Returns:
+        Normalized string for matching (lowercase, simplified)
+
+    Examples:
+        >>> normalize_company_name("Apple Inc.")
+        'apple'
+        >>> normalize_company_name("AT&T Corporation")
+        'at&t'
+
+    Note:
+        For display/identifier purposes, use canonicalize_company_name() instead.
+    """
+    return _normalize_company_name(name)
+
+
+def canonicalize_company_name(name: str) -> str:
+    """Canonicalize company name for display and identifiers.
+
+    This function preserves readability while making names safe for identifiers:
+    - Preserves case (Apple Inc, not APPLE INC)
+    - Removes problematic punctuation
+    - Normalizes legal suffixes
+    - Converts unicode to ASCII
+
+    Args:
+        name: Company name to canonicalize
+
+    Returns:
+        Canonicalized name safe for identifiers (preserves case)
+
+    Examples:
+        >>> canonicalize_company_name("Apple, Inc.")
+        'Apple Inc'
+        >>> canonicalize_company_name("Société Générale")
+        'Societe Generale'
+
+    Note:
+        For fuzzy matching, use normalize_company_name() instead.
+    """
+    return _canonicalize_company_name(name)
+
+
+# Deprecated alias - kept for backwards compatibility
 def normalize_name(name: str) -> str:
     """Normalize company name for matching.
+
+    DEPRECATED: Use normalize_company_name() instead.
+    This alias will be removed in v1.0.0.
 
     Args:
         name: Company name to normalize
@@ -62,6 +121,13 @@ def normalize_name(name: str) -> str:
     Returns:
         Normalized string (lowercase, no punctuation, legal suffixes removed)
     """
+    import warnings
+    warnings.warn(
+        "normalize_name() is deprecated and will be removed in v1.0.0. "
+        "Use normalize_company_name() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     return _normalize_company_name(name)
 
 
@@ -170,9 +236,11 @@ def get_company_id(company: Dict[str, Any], safe: bool = False) -> str:
 
 
 __all__ = [
-    "company_identifier",    # Primary API
-    "get_identifier",        # Alias for backwards compatibility
-    "normalize_name",
+    "company_identifier",         # Primary API
+    "get_identifier",            # Alias for backwards compatibility
+    "normalize_company_name",    # Primary normalization function
+    "canonicalize_company_name", # Primary canonicalization function
+    "normalize_name",            # Deprecated alias (backwards compatibility)
     "match_company",
     "resolve_company",
     "list_companies",

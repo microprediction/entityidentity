@@ -138,17 +138,48 @@ def normalize_company_name(name: str) -> str:
     return name
 
 
+import warnings
+from functools import wraps
+from typing import Callable
+
+
+def _deprecated_alias(original_func: Callable, new_name: str) -> Callable:
+    """Create a deprecated alias for a function."""
+    @wraps(original_func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            f"{wrapper.__name__} is deprecated and will be removed in v1.0.0. "
+            f"Use {new_name} instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return original_func(*args, **kwargs)
+    return wrapper
+
+
 __all__ = [
+    # Primary functions (use these)
     'canonicalize_company_name',
-    'validate_canonical_name',
     'normalize_company_name',
+    'validate_canonical_name',
     'LEGAL_RE',
-    # Backwards compatibility aliases
+    # Deprecated aliases (for backwards compatibility)
     'canonicalize_name',
     'normalize_name',
 ]
 
-# Backwards compatibility aliases
-canonicalize_name = canonicalize_company_name
-normalize_name = normalize_company_name
+# Deprecated aliases with warnings
+canonicalize_name = _deprecated_alias(canonicalize_company_name, 'canonicalize_company_name')
+canonicalize_name.__name__ = 'canonicalize_name'
+canonicalize_name.__doc__ = """DEPRECATED: Use canonicalize_company_name() instead.
+
+This function will be removed in v1.0.0.
+"""
+
+normalize_name = _deprecated_alias(normalize_company_name, 'normalize_company_name')
+normalize_name.__name__ = 'normalize_name'
+normalize_name.__doc__ = """DEPRECATED: Use normalize_company_name() instead.
+
+This function will be removed in v1.0.0.
+"""
 

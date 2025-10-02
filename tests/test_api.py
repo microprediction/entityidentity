@@ -1,4 +1,20 @@
-"""Tests for main public API functions"""
+"""Integration tests for the public API.
+
+These tests verify that the main public API (entityidentity/__init__.py)
+works correctly across companies, countries, and metals.
+
+Tests focus on:
+- Primary API functions (company_identifier, country_identifier, etc.)
+- Backwards compatibility with legacy aliases
+- Cross-API integration (e.g., company + country resolution together)
+
+For unit tests of specific modules, see:
+- companies/test_normalization.py - Company name normalization
+- companies/test_resolution.py - Company resolution logic
+- test_metals.py - Metal resolution
+
+Run with: pytest tests/test_api.py
+"""
 
 import pytest
 from entityidentity import (

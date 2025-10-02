@@ -10,7 +10,9 @@ Architecture:
 
 # User-facing API (clean wrappers around implementation)
 from entityidentity.companies.companyapi import (
-    normalize_name,
+    normalize_company_name,
+    canonicalize_company_name,
+    normalize_name,  # DEPRECATED - use normalize_company_name
     match_company,
     resolve_company,
     list_companies,
@@ -46,7 +48,9 @@ from entityidentity.companies.companyfilter import (
 
 __all__ = [
     # Main API
-    "normalize_name",
+    "normalize_company_name",
+    "canonicalize_company_name",
+    "normalize_name",  # DEPRECATED
     "match_company",
     "resolve_company",
     "list_companies",

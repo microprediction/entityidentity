@@ -56,14 +56,24 @@ All functions are available from the top-level module:
 
 ```python
 from entityidentity import (
-    company_identifier,   # Primary API - get canonical ID
-    match_company,        # Get full company details
-    resolve_company,      # Get resolution with all candidates
-    normalize_name,       # Normalize company names
-    extract_companies,    # Extract companies from text
-    get_company_id,       # Format company as ID string
+    company_identifier,       # Primary API - get canonical ID
+    match_company,            # Get full company details
+    resolve_company,          # Get resolution with all candidates
+    normalize_company_name,   # Normalize names for matching
+    canonicalize_company_name,# Canonicalize names for display
+    extract_companies,        # Extract companies from text
+    get_company_id,           # Format company as ID string
 )
 ```
+
+### Naming Convention
+
+The package uses consistent naming for normalization functions:
+
+- **`normalize_company_name()`**: Aggressive normalization for fuzzy matching (lowercase, no punctuation)
+- **`canonicalize_company_name()`**: Gentle normalization for display/identifiers (preserves case)
+
+**Deprecated**: The shorter `normalize_name()` alias is deprecated and will be removed in v1.0.0.
 
 ---
 
@@ -230,9 +240,9 @@ BHP -> BHP Group Limited (AU)
 
 ---
 
-### `normalize_name(name)`
+### `normalize_company_name(name)`
 
-Normalize company name for matching (removes legal suffixes, punctuation, etc.).
+Normalize company name for fuzzy matching (aggressive normalization).
 
 **Arguments:**
 - `name` (str): Company name to normalize
@@ -242,20 +252,68 @@ Normalize company name for matching (removes legal suffixes, punctuation, etc.).
 
 **Examples:**
 ```python
->>> normalize_name("Apple Inc.")
+>>> normalize_company_name("Apple Inc.")
 'apple'
 
->>> normalize_name("AT&T Corporation")
+>>> normalize_company_name("AT&T Corporation")
 'at&t'
 
->>> normalize_name("BHP Billiton Ltd")
+>>> normalize_company_name("BHP Billiton Ltd")
 'bhp billiton'
 ```
 
 **Use Cases:**
-- Pre-processing for custom matching logic
-- Comparing company names manually
+- Pre-processing for fuzzy matching
 - Building search indexes
+- Deduplication workflows
+
+---
+
+### `canonicalize_company_name(name)`
+
+Canonicalize company name for display and identifiers (preserves readability).
+
+**Arguments:**
+- `name` (str): Company name to canonicalize
+
+**Returns:**
+- `str`: Canonicalized name (case preserved, safe for identifiers)
+
+**Examples:**
+```python
+>>> canonicalize_company_name("Apple, Inc.")
+'Apple Inc'
+
+>>> canonicalize_company_name("AT&T Corporation")
+'AT&T Corporation'
+
+>>> canonicalize_company_name("Société Générale")
+'Societe Generale'
+```
+
+**Use Cases:**
+- Creating human-readable identifiers
+- Display names in UI
+- Database keys that need to be readable
+
+---
+
+### `normalize_name(name)` *(DEPRECATED)*
+
+**⚠️ DEPRECATED**: Use `normalize_company_name()` instead. This function will be removed in v1.0.0.
+
+Normalize company name for matching (removes legal suffixes, punctuation, etc.).
+
+**Migration:**
+```python
+# Old (deprecated)
+from entityidentity import normalize_name
+result = normalize_name("Apple Inc.")
+
+# New (recommended)
+from entityidentity import normalize_company_name
+result = normalize_company_name("Apple Inc.")
+```
 
 ---
 
