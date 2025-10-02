@@ -56,8 +56,9 @@ def _score_geo_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> f
     dist_km = haversine_distance(lat1, lon1, lat2, lon2)
 
     # Scoring function: exponential decay
-    # Perfect match at 0 km, 0.5 at ~50 km, near 0 at 500+ km
-    return math.exp(-dist_km / 50)
+    # Perfect match at 0 km, ~0.9 at 10 km, 0.5 at ~50 km, near 0 at 500+ km
+    # Using decay constant of 100 for gentler decay
+    return math.exp(-dist_km / 100)
 
 
 def _score_company_match(company_id1: Optional[str], company_id2: Optional[str]) -> float:
@@ -126,8 +127,13 @@ class FacilityLinker:
             try:
                 company_result = self.company_resolver(company_hint)
                 if company_result:
-                    # Use wikidata_qid or lei as the company ID
-                    result['company_id'] = company_result.get('wikidata_qid') or company_result.get('lei')
+                    # Use wikidata_qid or lei as the company ID, or create one from name and country
+                    company_id = company_result.get('wikidata_qid') or company_result.get('lei')
+                    if not company_id and company_result.get('name'):
+                        # Create ID from name and country
+                        country = company_result.get('country', '')
+                        company_id = f"{company_result['name']}:{country}" if country else company_result['name']
+                    result['company_id'] = company_id
                     result['company_name'] = company_result.get('name')
             except Exception:
                 pass
