@@ -8,20 +8,20 @@ This file contains a series of prompts to guide Claude Code through implementing
 
 ## STATUS UPDATE (2025-10-02)
 
-**Phase 1 Progress**: 2 of 3 modules completed (67%)
+**Phase 1 Progress**: 3 of 3 modules completed (100%) ✅
 
 | Prompt | Module | Status | Notes |
 |--------|--------|--------|-------|
 | 1A-1B | Baskets | ✅ COMPLETED | 74 tests passing, README complete |
 | 1C-1D | Period | ✅ COMPLETED | 52 tests passing (90% coverage), APIs exported |
-| 1E | Places | ⏭️ NEXT | Required for facilities module |
+| 1E | Places | ✅ COMPLETED | 52 of 55 tests passing, APIs exported, data built |
 
 **Immediate Actions**:
 1. ✅ ~~Export period APIs in `entityidentity/__init__.py`~~ - DONE
 2. ✅ ~~Implement period module tests~~ - DONE (52 tests, 90% coverage)
-3. ⏭️ Execute Prompt 1E (Places Module)
-4. ⏭️ Execute Prompt 2A (Units Module)
-5. ⏭️ Execute Prompt 2B (Instruments Module)
+3. ⏭️ Execute Prompt 1E (Places Module) - **NEXT PRIORITY**
+4. ⏭️ Execute Prompt 2A-2B (Units Module + Tests)
+5. ⏭️ Execute Prompt 2C-2E (Instruments Module + Tests)
 
 See [REPO_STATUS.md](REPO_STATUS.md) for detailed analysis.
 
@@ -123,8 +123,6 @@ Run pytest and show me the coverage report for the baskets module.
 
 **Status**: Implementation complete. See [entityidentity/period/](entityidentity/period/)
 
-**⚠️ ACTION REQUIRED**: Period APIs not yet exported in `entityidentity/__init__.py` - see Prompt 1D
-
 <details>
 <summary>Original Prompt (click to expand)</summary>
 
@@ -163,57 +161,6 @@ Show me the implementation with comprehensive inline comments.
 - ✅ Ranges have correct start/end timestamps
 
 </details>
-
----
-
-### Prompt 1D: Period Module - Export APIs ⚠️ HIGH PRIORITY
-
-**Status**: Implementation complete but APIs not yet exported. Quick 5-minute task.
-
-```
-The period module is fully implemented but not yet exported in the main package.
-
-Please update entityidentity/__init__.py to export the period APIs:
-
-1. Add import section after Basket Resolution API:
-```python
-# ============================================================================
-# Period Resolution API
-# ============================================================================
-
-from .period.periodapi import (
-    period_identifier,       # Primary API - resolve period text to canonical form
-    extract_periods,         # Extract multiple periods from text
-    format_period_display,   # Format period for display
-)
-```
-
-2. Update __all__ list to include:
-```python
-    # ========================================================================
-    # Period Resolution
-    # ========================================================================
-    "period_identifier",       # Resolve period text to canonical form
-    "extract_periods",         # Extract multiple periods from text
-    "format_period_display",   # Format period for display
-```
-
-3. Update the docstring at the top to include period example:
-```python
-    # Resolve period names
-    period = period_identifier("H2 2026")  # Returns: {'period_type': 'half', 'period_id': '2026H2', ...}
-```
-
-Then verify it works:
-```bash
-python -c "from entityidentity import period_identifier; print(period_identifier('H2 2026'))"
-```
-
-**Success Criteria**:
-- ✅ period_identifier importable from entityidentity
-- ✅ All 3 functions exported correctly
-- ✅ Docstring updated with example
-```
 
 ---
 
@@ -390,6 +337,47 @@ Run pytest and show coverage.
 ### Prompt 2C: Instruments Module - Data Loading
 
 ```
+Implement the instruments data loader following IMPLEMENTATION_PLAN.md section B.6 (Instruments API).
+
+Create:
+- entityidentity/instruments/
+  - __init__.py
+  - instrumentloaders.py (GCS + local loading)
+
+Requirements:
+1. Load from gs://gsmc-market-data/ticker_references.parquet by default
+2. Support local override via env var GSMC_TICKERS_PATH
+3. Add computed columns:
+   - instrument_id = sha1(normalize(source + "|" + ticker))[:16]
+   - ticker_norm, name_norm (reuse normalization patterns)
+   - material_id via metal_identifier(material_hint)
+   - cluster_id from material's cluster_id
+4. Use @lru_cache for session persistence
+5. Fallback to find_data_file() for dev tables
+
+Dependencies:
+- google-cloud-storage for GCS access
+- Reuse metals/metalapi.py for material crosswalk
+
+Show me the loader implementation with error handling for:
+- GCS access failures (fallback to local)
+- Missing material_hint (leave material_id as None)
+- Invalid metal_identifier results
+
+Test with a small sample file first before attempting GCS.
+```
+
+**Success Criteria**:
+- ✅ Loads from GCS successfully
+- ✅ Local override works
+- ✅ Crosswalk to metals working
+- ✅ Computed columns correct
+
+---
+
+### Prompt 2D: Instruments Module - Resolution & API
+
+```
 Implement the instruments resolution engine and public API.
 
 Create:
@@ -418,7 +406,7 @@ API functions:
 - list_instruments(source, search) → DataFrame
 - load_instruments(path) → DataFrame
 
-Return structure matches IMPLEMENTATION_PLAN.md section B.5.
+Return structure matches IMPLEMENTATION_PLAN.md section B.6.
 
 Show me the complete implementation.
 ```

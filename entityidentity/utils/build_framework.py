@@ -52,7 +52,8 @@ def build_entity_database(config: BuildConfig) -> int:
     if config.input_data is not None:
         source = "direct data"
         print(f"Building {config.entity_plural} database from {source}")
-        entities = config.input_data
+        # Extract entities from the input_data dictionary using yaml_key
+        entities = config.input_data.get(config.yaml_key, [])
     elif config.input_yaml is not None:
         source = str(config.input_yaml)
         print(f"Building {config.entity_plural} database from {source}")
