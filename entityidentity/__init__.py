@@ -1,10 +1,11 @@
 """Entity Identity - Ontology / Entity Resolution
 
-Public API for entity resolution across companies, countries, metals, and baskets.
+Public API for entity resolution across companies, countries, metals, baskets, places, and periods.
 
 Usage:
     from entityidentity import company_identifier, match_company
     from entityidentity import metal_identifier, basket_identifier, period_identifier
+    from entityidentity import place_identifier
 
     # Get canonical company identifier
     company_id = company_identifier("Apple")  # Returns: 'Apple Inc:US'
@@ -17,6 +18,9 @@ Usage:
 
     # Resolve basket names
     basket = basket_identifier("PGM 4E")  # Returns: {'basket_id': 'PGM_4E', ...}
+
+    # Resolve place names
+    place = place_identifier("Limpopo", country_hint="ZA")  # Returns: {'country': 'ZA', 'admin1': 'Limpopo', ...}
 
     # Resolve period names
     period = period_identifier("H2 2026")  # Returns: {'period_type': 'half', 'period_id': '2026H2', ...}
@@ -84,6 +88,18 @@ from .baskets.basketapi import (
 )
 
 # ============================================================================
+# Places Resolution API
+# ============================================================================
+
+from .places.placeapi import (
+    place_identifier,        # Primary API - resolve admin1 region to canonical form
+    extract_location,        # Extract location from text
+    match_place,             # Get top-K candidate matches
+    list_places,             # List/filter available places
+    load_places,             # Load places database
+)
+
+# ============================================================================
 # Period Resolution API
 # ============================================================================
 
@@ -91,6 +107,16 @@ from .period.periodapi import (
     period_identifier,       # Primary API - resolve period text to canonical form
     extract_periods,         # Extract multiple periods from text
     format_period_display,   # Format period for display
+)
+
+# ============================================================================
+# Units Normalization API
+# ============================================================================
+
+from .units.unitapi import (
+    normalize_unit,          # Primary API - normalize value/unit/basis to canonical form
+    get_canonical_unit,      # Get canonical unit and basis for a material
+    validate_conversion_inputs,  # Validate required parameters are present
 )
 
 # ============================================================================
@@ -112,7 +138,9 @@ __all__ = [
     "country_identifier",   # Resolve country name -> ISO code
     "metal_identifier",     # Resolve metal name -> canonical form
     "basket_identifier",    # Resolve basket name -> canonical form
+    "place_identifier",     # Resolve place name -> canonical form
     "period_identifier",    # Resolve period text -> canonical form
+    "normalize_unit",       # Normalize value/unit/basis to canonical form
 
     # ========================================================================
     # Company Resolution
@@ -149,11 +177,27 @@ __all__ = [
     "load_baskets",            # Load baskets database
 
     # ========================================================================
+    # Places Resolution
+    # ========================================================================
+    "place_identifier",        # Resolve place name to canonical form
+    "extract_location",        # Extract location from text
+    "match_place",             # Get top-K place matches
+    "list_places",             # List available places
+    "load_places",             # Load places database
+
+    # ========================================================================
     # Period Resolution
     # ========================================================================
     "period_identifier",       # Resolve period text to canonical form
     "extract_periods",         # Extract multiple periods from text
     "format_period_display",   # Format period for display
+
+    # ========================================================================
+    # Units Normalization
+    # ========================================================================
+    "normalize_unit",              # Normalize value/unit/basis to canonical form
+    "get_canonical_unit",          # Get canonical unit and basis for a material
+    "validate_conversion_inputs",  # Validate required parameters are present
 
     # ========================================================================
     # Build Utilities
