@@ -13,14 +13,15 @@ This file contains a series of prompts to guide Claude Code through implementing
 | Prompt | Module | Status | Notes |
 |--------|--------|--------|-------|
 | 1A-1B | Baskets | ✅ COMPLETED | 74 tests passing, README complete |
-| 1C-1D | Period | ✅ COMPLETED | Implementation done, needs export in __init__.py |
+| 1C-1D | Period | ✅ COMPLETED | 52 tests passing (90% coverage), APIs exported |
 | 1E | Places | ⏭️ NEXT | Required for facilities module |
 
 **Immediate Actions**:
-1. ✅ Export period APIs in `entityidentity/__init__.py` (add 3 lines)
-2. ⏭️ Execute Prompt 1E (Places Module)
-3. ⏭️ Execute Prompt 2A (Units Module)
-4. ⏭️ Execute Prompt 2B (Instruments Module)
+1. ✅ ~~Export period APIs in `entityidentity/__init__.py`~~ - DONE
+2. ✅ ~~Implement period module tests~~ - DONE (52 tests, 90% coverage)
+3. ⏭️ Execute Prompt 1E (Places Module)
+4. ⏭️ Execute Prompt 2A (Units Module)
+5. ⏭️ Execute Prompt 2B (Instruments Module)
 
 See [REPO_STATUS.md](REPO_STATUS.md) for detailed analysis.
 
@@ -216,9 +217,9 @@ python -c "from entityidentity import period_identifier; print(period_identifier
 
 ---
 
-### Prompt 1D-OLD: Period Module - Tests ⏭️ TODO
+### Prompt 1D: Period Module - Tests ✅ COMPLETED
 
-**Status**: Tests not yet written (module is functional but needs test coverage)
+**Status**: 52 tests implemented and passing (90% coverage)
 
 <details>
 <summary>Original Prompt (click to expand)</summary>

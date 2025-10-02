@@ -14,6 +14,7 @@ pip install entityidentity
 
 ```python
 from entityidentity import company_identifier, country_identifier, metal_identifier
+from entityidentity import basket_identifier, period_identifier
 
 # Company resolution - main use case
 company_identifier("Apple")              # → 'Apple Inc:US'
@@ -28,6 +29,13 @@ country_identifier("Untied States")      # → 'US' (typo tolerance!)
 # Metal resolution - elements, alloys, compounds
 metal_identifier("Pt")                   # → {'name': 'Platinum', 'symbol': 'Pt', ...}
 metal_identifier("lithium carbonate")    # → {'name': 'Lithium carbonate', 'formula': 'Li2CO3', ...}
+
+# Basket resolution - metal combinations
+basket_identifier("PGM 4E")              # → {'basket_id': 'pgm-4e', 'name': 'PGM 4E', ...}
+
+# Period resolution - temporal normalization
+period_identifier("H2 2026")             # → {'period_type': 'half', 'period_id': '2026H2', ...}
+period_identifier("Q1 2026")             # → {'period_type': 'quarter', 'period_id': '2026Q1', ...}
 ```
 
 **That's it!** One function call returns a stable, globally unique identifier.
