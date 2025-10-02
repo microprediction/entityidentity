@@ -144,26 +144,25 @@ def _build_candidate_pool(
     # Step 3: Prefix blocking on ticker_norm
     if len(query_norm) >= 2 and "ticker_norm" in candidates.columns:
         # Try exact match first
-        exact = candidates[candidates["ticker_norm"] == query_norm]
-        if not exact.empty:
+        mask = candidates["ticker_norm"] == query_norm
+        exact = candidates.loc[mask]
+        if len(exact) > 0:
             return exact
 
         # Then prefix match
         if len(query_norm) >= 3:
             prefix = query_norm[:3]
-            prefix_matches = candidates[
-                candidates["ticker_norm"].str.startswith(prefix, na=False)
-            ]
-            if not prefix_matches.empty:
+            mask = candidates["ticker_norm"].str.startswith(prefix, na=False)
+            prefix_matches = candidates.loc[mask]
+            if len(prefix_matches) > 0:
                 candidates = prefix_matches
 
     # Step 4: If still too many (>100), try name prefix
     if len(candidates) > 100 and len(query_norm) >= 4 and "name_norm" in candidates.columns:
         name_prefix = query_norm[:4]
-        name_matches = candidates[
-            candidates["name_norm"].str.contains(name_prefix, case=False, na=False)
-        ]
-        if not name_matches.empty:
+        mask = candidates["name_norm"].str.contains(name_prefix, case=False, na=False)
+        name_matches = candidates.loc[mask]
+        if len(name_matches) > 0:
             candidates = name_matches
 
     return candidates
