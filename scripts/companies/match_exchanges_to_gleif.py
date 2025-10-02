@@ -24,53 +24,22 @@ import pandas as pd
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from entityidentity.companies.companyexchanges import load_asx, load_lse, load_tsx
+from entityidentity.companies.companyexchanges_utils import load_all_exchanges
 from entityidentity.companies.companynormalize import canonicalize_company_name
 from rapidfuzz import fuzz, process
 
 
 def load_exchanges():
-    """Load data from major mining exchanges."""
-    print("=" * 70)
-    print("Loading Exchange Data")
-    print("=" * 70)
-    
-    exchanges = []
-    
-    # ASX
-    print("\n📊 ASX (Australian Securities Exchange)...")
-    try:
-        asx = load_asx()
-        print(f"   Loaded: {len(asx):,} companies")
-        exchanges.append(asx)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-    
-    # LSE
-    print("\n📊 LSE (London Stock Exchange)...")
-    try:
-        lse = load_lse()
-        print(f"   Loaded: {len(lse):,} companies")
-        exchanges.append(lse)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-    
-    # TSX
-    print("\n📊 TSX (Toronto Stock Exchange)...")
-    try:
-        tsx = load_tsx()
-        print(f"   Loaded: {len(tsx):,} companies")
-        exchanges.append(tsx)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-    
-    if exchanges:
-        combined = pd.concat(exchanges, ignore_index=True)
+    """Load data from major mining exchanges using shared utility."""
+    # Don't use sample data on error for matching - we want live data or nothing
+    combined, stats = load_all_exchanges(use_samples_on_error=False, verbose=True)
+
+    if not combined.empty:
         print(f"\n✅ Total: {len(combined):,} exchange companies")
-        return combined
     else:
         print("\n❌ No exchange data loaded!")
-        return pd.DataFrame()
+
+    return combined
 
 
 def fuzzy_match_to_gleif(exchange_df, gleif_df, threshold=85):

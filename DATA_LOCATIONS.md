@@ -370,6 +370,112 @@ Total:                    15-70 MB
 
 ---
 
+## Data Loading Patterns
+
+EntityIdentity uses two different data loading patterns depending on whether the data is:
+1. **Static** (bundled with package) - like metals data
+2. **Dynamic** (built/downloaded by user) - like companies data
+
+### Pattern 1: Static Package Data (Metals)
+
+**Location:** `entityidentity/metals/data/metals.parquet`
+
+**Characteristics:**
+- Data is **module-local** (stored within the package)
+- Always available after pip install
+- Never searches `tables/` directory
+- Small, curated dataset (<1MB)
+- Updates require new package release
+
+**Loading Code:**
+```python
+from entityidentity.metals.metalapi import load_metals
+
+# Searches only: entityidentity/metals/data/metals.parquet
+df = load_metals()
+```
+
+**Use Case:** Metal entities are:
+- Stable (periodic table doesn't change often)
+- Small (~50 metals)
+- Manually curated
+- Part of the package's core value
+
+---
+
+### Pattern 2: Dynamic Build Data (Companies)
+
+**Location:** `tables/companies/companies.parquet` OR `entityidentity/data/companies/companies.parquet`
+
+**Characteristics:**
+- Data can be **built or downloaded** by user
+- Falls back to sample data in package
+- Searches both `tables/` (dev) and `data/` (package)
+- Large, generated dataset (1-50MB)
+- User updates via build scripts
+
+**Loading Code:**
+```python
+from entityidentity.companies.companyresolver import load_companies
+
+# Priority:
+# 1. Explicit path (if provided)
+# 2. Package data: entityidentity/data/companies/
+# 3. Development data: tables/companies/
+df = load_companies()
+```
+
+**Use Case:** Company data is:
+- Dynamic (companies constantly change)
+- Large (10K-100K+ companies)
+- Downloaded from external sources (GLEIF, Wikidata)
+- Too large to bundle fully with package
+
+---
+
+### When to Use Each Pattern
+
+| Criteria | Static (Metals) | Dynamic (Companies) |
+|----------|----------------|---------------------|
+| **Data size** | <1MB | >1MB |
+| **Update frequency** | Rare (years) | Frequent (weekly/monthly) |
+| **Source** | Manually curated | External APIs/downloads |
+| **Distribution** | Bundle with package | User builds locally |
+| **Search locations** | Module-local only | Multiple fallback paths |
+
+---
+
+### Shared Utilities
+
+Both patterns use the shared `find_data_file()` utility from `entityidentity.utils.datautils`:
+
+```python
+# Metals - module-local only
+found_path = find_data_file(
+    module_file=__file__,
+    subdirectory="metals",
+    filenames=["metals.parquet"],
+    search_dev_tables=False,      # Don't search tables/
+    module_local_data=True,       # Check metals/data/
+)
+
+# Companies - multiple search paths
+found_path = find_data_file(
+    module_file=__file__,
+    subdirectory="companies",
+    filenames=["companies.parquet", "companies.csv"],
+    search_dev_tables=True,       # Also search tables/
+    module_local_data=False,      # Use standard data/ dir
+)
+```
+
+This unified approach provides:
+- Consistent error messages
+- Flexible search strategies
+- Easy configuration per data type
+
+---
+
 ## Related Documentation
 
 - [CLAUDE.md](CLAUDE.md) - Development setup and commands
