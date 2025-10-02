@@ -47,7 +47,10 @@ pip install -e .  # From entityidentity root
 
 # Build the places database (downloads GeoNames data automatically)
 cd entityidentity/places/data
-python build_admin1.py
+python build_admin1_standalone.py
+
+# Note: build_admin1.py is also available but requires package imports
+# Use build_admin1_standalone.py to avoid import issues
 ```
 
 ## Usage
