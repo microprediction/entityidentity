@@ -4,7 +4,7 @@ Public API for entity resolution across companies, countries, metals, and basket
 
 Usage:
     from entityidentity import company_identifier, match_company
-    from entityidentity import metal_identifier, basket_identifier
+    from entityidentity import metal_identifier, basket_identifier, period_identifier
 
     # Get canonical company identifier
     company_id = company_identifier("Apple")  # Returns: 'Apple Inc:US'
@@ -17,6 +17,9 @@ Usage:
 
     # Resolve basket names
     basket = basket_identifier("PGM 4E")  # Returns: {'basket_id': 'PGM_4E', ...}
+
+    # Resolve period names
+    period = period_identifier("H2 2026")  # Returns: {'period_type': 'half', 'period_id': '2026H2', ...}
 
 See entityidentity/companies/API.md for full documentation.
 """
