@@ -1,7 +1,32 @@
-"""LLM-based company sector classification and filtering.
+"""Company sector classification and filtering.
 
-This module provides intelligent company classification using LLMs to determine
-if companies belong to mining or energy sectors.
+This module provides multiple strategies for filtering mining/energy companies:
+
+1. **LLM Classification (Accurate but Expensive)**
+   - Uses OpenAI/Anthropic models for intelligent classification
+   - Understands industry context, supply/demand chains, diversified companies
+   - ~3 companies/second, API costs apply
+   - Best for: Production databases, research, high-accuracy needs
+
+2. **Keyword Filtering (Fast but Simple)**
+   - Rule-based matching on names, keywords, industry codes
+   - ~10,000 companies/second, no API costs
+   - Best for: Quick filtering, CI/CD, large datasets with tight budgets
+
+3. **Hybrid Mode (Balanced)**
+   - Keywords filter first (~90% reduction), then LLM refines
+   - Combines speed and accuracy
+   - Best for: Most use cases
+
+Usage:
+    # LLM-only (most accurate)
+    filter_companies_llm(df, strategy='llm')
+
+    # Keyword-only (fastest)
+    filter_companies_llm(df, strategy='keyword')
+
+    # Hybrid (recommended)
+    filter_companies_llm(df, strategy='hybrid')
 """
 
 import json
@@ -198,6 +223,133 @@ def classify_company_anthropic(
     )
 
 
+# ============================================================================
+# Keyword-based filtering (fast, simple)
+# ============================================================================
+
+# Known major mining/energy companies (whitelist for edge cases)
+KNOWN_MINING_ENERGY_COMPANIES = [
+    'anglo american', 'bhp', 'rio tinto', 'vale', 'glencore',
+    'freeport', 'newmont', 'barrick', 'southern copper',
+    'exxon', 'chevron', 'shell', 'bp', 'totalenergies',
+    'conocophillips', 'equinor', 'eni', 'petrobras',
+]
+
+# Mining and Energy sector keywords and codes
+MINING_KEYWORDS = [
+    'mining', 'mine', 'mineral', 'metals', 'gold', 'silver', 'copper',
+    'iron', 'steel', 'aluminum', 'zinc', 'lead', 'nickel', 'lithium',
+    'rare earth', 'coal', 'diamond', 'platinum', 'palladium', 'uranium',
+    'exploration', 'ore', 'quarry', 'extraction', 'smelter', 'refinery',
+    'resources', 'commodities', 'cobre', 'minera', 'miner'
+]
+
+ENERGY_KEYWORDS = [
+    'energy', 'oil', 'gas', 'petroleum', 'lng', 'lpg', 'pipeline',
+    'drilling', 'offshore', 'onshore', 'refining', 'exploration',
+    'power', 'electric', 'electricity', 'utility', 'utilities',
+    'solar', 'wind', 'renewable', 'hydro', 'nuclear', 'geothermal',
+    'coal', 'battery', 'storage', 'grid', 'transmission'
+]
+
+# GICS Industry Codes (Level 2 - Industry Group)
+GICS_CODES = ['10', '15', '1010', '1510']
+
+# NAICS Codes
+NAICS_CODES = ['21', '211', '212', '213', '221', '2211', '2212']
+
+# NACE Codes (EU)
+NACE_CODES = ['B', 'D', '05', '06', '07', '08', '09', '35']
+
+
+def matches_mining_energy_keyword(row: pd.Series) -> bool:
+    """Check if a company matches mining or energy criteria using keywords.
+
+    Fast rule-based filtering without API calls.
+
+    Args:
+        row: DataFrame row with company data
+
+    Returns:
+        True if company is in mining/energy sector
+    """
+    # Check name against known companies whitelist first
+    name = str(row.get('name', '')).lower()
+    name_normalized = str(row.get('name_norm', '')).lower()
+
+    for known_company in KNOWN_MINING_ENERGY_COMPANIES:
+        if known_company in name or known_company in name_normalized:
+            return True
+
+    # Check name for keywords
+    if any(keyword in name for keyword in MINING_KEYWORDS + ENERGY_KEYWORDS):
+        return True
+
+    # Check industry field if available
+    if 'industry' in row.index and pd.notna(row['industry']):
+        industry = str(row['industry']).lower()
+        if any(keyword in industry for keyword in MINING_KEYWORDS + ENERGY_KEYWORDS):
+            return True
+
+    # Check sector field if available
+    if 'sector' in row.index and pd.notna(row['sector']):
+        sector = str(row['sector']).lower()
+        if any(keyword in sector for keyword in MINING_KEYWORDS + ENERGY_KEYWORDS):
+            return True
+
+    # Check GICS code if available
+    if 'gics' in row.index and pd.notna(row['gics']):
+        gics = str(row['gics'])
+        if any(gics.startswith(code) for code in GICS_CODES):
+            return True
+
+    # Check NAICS code if available
+    if 'naics' in row.index and pd.notna(row['naics']):
+        naics = str(row['naics'])
+        if any(naics.startswith(code) for code in NAICS_CODES):
+            return True
+
+    # Check NACE code if available
+    if 'nace' in row.index and pd.notna(row['nace']):
+        nace = str(row['nace']).upper()
+        if any(nace.startswith(code) for code in NACE_CODES):
+            return True
+
+    # Check aliases for keywords
+    if 'aliases' in row.index and isinstance(row['aliases'], list):
+        for alias in row['aliases']:
+            alias_lower = str(alias).lower()
+            if any(keyword in alias_lower for keyword in MINING_KEYWORDS + ENERGY_KEYWORDS):
+                return True
+
+    return False
+
+
+def filter_companies_keyword(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter companies using keyword-based rules (fast, no API costs).
+
+    Args:
+        df: Input DataFrame with company data
+
+    Returns:
+        Filtered DataFrame containing likely mining/energy companies
+    """
+    print(f"Filtering using keyword-based rules...")
+    print(f"Total companies: {len(df):,}")
+
+    # Apply filter
+    mask = df.apply(matches_mining_energy_keyword, axis=1)
+    filtered = df[mask].copy()
+
+    print(f"✅ Matched companies: {len(filtered):,} ({len(filtered)/len(df)*100:.1f}%)")
+
+    return filtered
+
+
+# ============================================================================
+# Cache management
+# ============================================================================
+
 def load_cache(cache_file: Optional[Path]) -> Dict:
     """Load classification cache."""
     if cache_file:
@@ -225,9 +377,10 @@ def filter_companies_llm(
     confidence_threshold: float = 0.7,
     batch_size: int = 100,
     config_path: Optional[Path] = None,
+    _internal_call: bool = False,
 ) -> pd.DataFrame:
-    """Filter companies using LLM classification.
-    
+    """Filter companies using LLM classification only.
+
     Args:
         df: Input DataFrame with company data
         provider: LLM provider (openai or anthropic)
@@ -236,13 +389,15 @@ def filter_companies_llm(
         confidence_threshold: Minimum confidence to include company
         batch_size: Number of companies to process before saving cache
         config_path: Path to config file (defaults to package config)
-        
+        _internal_call: Internal flag to suppress header (used by hybrid mode)
+
     Returns:
         Filtered DataFrame containing only mining/energy companies
     """
     # Load configuration
     config = load_config(config_path)
-    print(f"Loaded configuration")
+    if not _internal_call:
+        print(f"Loaded configuration")
     
     # Filter out companies with empty names
     original_count = len(df)
@@ -393,6 +548,138 @@ def filter_companies_llm(
             print(f"  - {cat:10s}: {count:6,} companies")
     
     return filtered
+
+
+# ============================================================================
+# Unified API with strategy selection
+# ============================================================================
+
+def filter_companies(
+    df: pd.DataFrame,
+    strategy: str = "hybrid",
+    provider: str = "openai",
+    model: Optional[str] = None,
+    cache_file: Optional[Path] = None,
+    confidence_threshold: float = 0.7,
+    batch_size: int = 100,
+    config_path: Optional[Path] = None,
+) -> pd.DataFrame:
+    """Filter companies using selected strategy.
+
+    Args:
+        df: Input DataFrame with company data
+        strategy: Filtering strategy ('llm', 'keyword', or 'hybrid')
+        provider: LLM provider for LLM/hybrid modes (openai or anthropic)
+        model: Model name (defaults based on provider)
+        cache_file: Path to cache file for LLM classifications
+        confidence_threshold: Minimum confidence to include company (LLM only)
+        batch_size: Number of companies to process before saving cache (LLM only)
+        config_path: Path to config file (defaults to package config)
+
+    Returns:
+        Filtered DataFrame containing only mining/energy companies
+
+    Examples:
+        >>> # Fast keyword-only filtering
+        >>> filtered = filter_companies(df, strategy='keyword')
+
+        >>> # Most accurate LLM-only filtering
+        >>> filtered = filter_companies(df, strategy='llm', provider='openai')
+
+        >>> # Balanced hybrid approach (recommended)
+        >>> filtered = filter_companies(df, strategy='hybrid', provider='openai')
+    """
+    if strategy == "keyword":
+        return filter_companies_keyword(df)
+    elif strategy == "llm":
+        return filter_companies_llm(
+            df=df,
+            provider=provider,
+            model=model,
+            cache_file=cache_file,
+            confidence_threshold=confidence_threshold,
+            batch_size=batch_size,
+            config_path=config_path
+        )
+    elif strategy == "hybrid":
+        return filter_companies_hybrid(
+            df=df,
+            provider=provider,
+            model=model,
+            cache_file=cache_file,
+            confidence_threshold=confidence_threshold,
+            batch_size=batch_size,
+            config_path=config_path
+        )
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}. Use 'llm', 'keyword', or 'hybrid'")
+
+
+def filter_companies_hybrid(
+    df: pd.DataFrame,
+    provider: str = "openai",
+    model: Optional[str] = None,
+    cache_file: Optional[Path] = None,
+    confidence_threshold: float = 0.7,
+    batch_size: int = 100,
+    config_path: Optional[Path] = None,
+) -> pd.DataFrame:
+    """Filter companies using hybrid strategy (keyword pre-filter + LLM refinement).
+
+    This is the recommended approach for most use cases:
+    1. Apply fast keyword filtering to reduce dataset by ~90%
+    2. Use LLM to refine results and eliminate false positives
+
+    Args:
+        df: Input DataFrame with company data
+        provider: LLM provider (openai or anthropic)
+        model: Model name (defaults based on provider)
+        cache_file: Path to cache file for classifications
+        confidence_threshold: Minimum confidence to include company
+        batch_size: Number of companies to process before saving cache
+        config_path: Path to config file (defaults to package config)
+
+    Returns:
+        Filtered DataFrame containing only mining/energy companies
+    """
+    print("=" * 70)
+    print("  HYBRID FILTERING STRATEGY")
+    print("=" * 70)
+    print()
+
+    # Stage 1: Keyword pre-filtering
+    print("📍 Stage 1: Keyword Pre-filtering")
+    print("-" * 70)
+    keyword_filtered = filter_companies_keyword(df)
+    reduction_pct = (1 - len(keyword_filtered) / len(df)) * 100
+    print(f"   Reduced dataset by {reduction_pct:.1f}% ({len(df):,} → {len(keyword_filtered):,} companies)")
+    print()
+
+    # Stage 2: LLM refinement
+    print("📍 Stage 2: LLM Refinement")
+    print("-" * 70)
+    final_filtered = filter_companies_llm(
+        df=keyword_filtered,
+        provider=provider,
+        model=model,
+        cache_file=cache_file,
+        confidence_threshold=confidence_threshold,
+        batch_size=batch_size,
+        config_path=config_path,
+        _internal_call=True
+    )
+
+    print()
+    print("=" * 70)
+    print("  HYBRID FILTERING RESULTS")
+    print("=" * 70)
+    print(f"   Original dataset:     {len(df):6,} companies")
+    print(f"   After keyword filter: {len(keyword_filtered):6,} companies ({len(keyword_filtered)/len(df)*100:5.1f}%)")
+    print(f"   After LLM refinement: {len(final_filtered):6,} companies ({len(final_filtered)/len(df)*100:5.1f}%)")
+    print(f"   False positive rate:  {(len(keyword_filtered) - len(final_filtered))/len(keyword_filtered)*100:5.1f}%")
+    print("=" * 70)
+
+    return final_filtered
 
 
 def main():

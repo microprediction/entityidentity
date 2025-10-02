@@ -1,10 +1,10 @@
 #!/bin/bash
 # Build and filter company dataset for mining/energy companies
 #
-# This script:
-# 1. Fetches companies from GLEIF API
-# 2. Runs LLM filtering for mining/energy companies
-# 3. Copies filtered data to package directory
+# This script orchestrates a complete pipeline:
+# 1. Fetches companies from multiple sources (GLEIF, Wikidata, exchanges)
+# 2. Filters for mining/energy companies using LLM classification
+# 3. Creates distribution-ready files (parquet, CSV preview, info file)
 #
 # Usage:
 #   ./build_filtered_dataset.sh [num_companies] [provider]
@@ -12,6 +12,9 @@
 # Examples:
 #   ./build_filtered_dataset.sh 100000 openai
 #   ./build_filtered_dataset.sh 500000 anthropic
+#
+# Environment Variables:
+#   OPENAI_API_KEY or ANTHROPIC_API_KEY must be set
 
 set -e  # Exit on error
 
@@ -94,11 +97,11 @@ else
 fi
 
 # Check Python
-if ! command -v python &> /dev/null; then
+if ! command -v python3 &> /dev/null; then
     log_error "Python not found"
     exit 1
 fi
-log_success "Python found: $(python --version)"
+log_success "Python found: $(python3 --version)"
 
 # Create directories
 mkdir -p "$TABLES_DIR"
@@ -115,11 +118,11 @@ echo ""
 
 # Estimate costs and time
 cost_per_company=0.0002
-estimated_cost=$(python -c "print(f'${cost_per_company} * ${NUM_COMPANIES} = \${${NUM_COMPANIES} * ${cost_per_company}:.2f}')")
-estimated_time=$(python -c "print(f'{${NUM_COMPANIES} / 1000:.0f} minutes')")
-expected_filtered=$(python -c "print(f'{int(${NUM_COMPANIES} * 0.02):,}')")
+estimated_cost=$(python3 -c "print(f'\${${NUM_COMPANIES} * ${cost_per_company}:.2f}')")
+estimated_time=$(python3 -c "print(f'{${NUM_COMPANIES} / 1000:.0f} minutes')")
+expected_filtered=$(python3 -c "print(f'{int(${NUM_COMPANIES} * 0.02):,}')")
 
-log_info "Estimated LLM cost: \$$estimated_cost"
+log_info "Estimated LLM cost: $estimated_cost"
 log_info "Estimated time: $estimated_time"
 log_info "Expected filtered companies: $expected_filtered (2% of total)"
 echo ""
@@ -131,43 +134,26 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Step 1: Fetch companies from GLEIF
-print_header "Step 1/3: Fetching Companies from GLEIF"
+# Step 1: Build companies database
+print_header "Step 1/3: Building Companies Database"
 
-log_info "Fetching $NUM_COMPANIES companies from GLEIF API..."
-log_info "This will take approximately $(python -c "print(f'{${NUM_COMPANIES} / 200 * 1.1 / 60:.0f}')")  minutes (rate limited to ~200/min)"
+log_info "Fetching companies from all sources..."
+log_info "This will take approximately $(python3 -c "print(f'{${NUM_COMPANIES} / 200 * 1.1 / 60:.0f}')") minutes"
 echo ""
 
+# Use the update_companies_db.py script directly
 cd "$PROJECT_ROOT"
-
-# Update the build script to use our max_records
-python -c "
-import sys
-sys.path.insert(0, '$PROJECT_ROOT')
-
-from entityidentity.build_companies_db import consolidate_companies
-
-print('Fetching companies...')
-df = consolidate_companies(
-    use_samples=False,
-    cache_dir='$CACHE_DIR',
-    max_companies=$NUM_COMPANIES,
-)
-
-print(f'Fetched {len(df):,} companies')
-
-# Save to tables
-df.to_parquet('$TABLES_DIR/companies.parquet', index=False)
-print(f'Saved to $TABLES_DIR/companies.parquet')
-"
+python3 scripts/companies/update_companies_db.py \
+    --output "$TABLES_DIR/companies_full.parquet" \
+    --cache-dir "$CACHE_DIR"
 
 if [ $? -eq 0 ]; then
-    log_success "Successfully fetched companies"
-    
+    log_success "Successfully built companies database"
+
     # Show stats
-    python -c "
+    python3 -c "
 import pandas as pd
-df = pd.read_parquet('$TABLES_DIR/companies.parquet')
+df = pd.read_parquet('$TABLES_DIR/companies_full.parquet')
 print('')
 print(f'Total companies: {len(df):,}')
 print(f'Countries: {df[\"country\"].nunique()}')
@@ -178,7 +164,7 @@ for country, count in df['country'].value_counts().head(10).items():
     print(f'  {country}: {count:,}')
 "
 else
-    log_error "Failed to fetch companies"
+    log_error "Failed to build companies database"
     exit 1
 fi
 
@@ -187,12 +173,12 @@ print_header "Step 2/3: LLM Filtering for Mining/Energy Companies"
 
 log_info "Running LLM classification..."
 log_info "Provider: $LLM_PROVIDER"
-log_info "This will take approximately $(python -c "print(f'{${NUM_COMPANIES} / 1000:.0f}')") minutes"
+log_info "This will take approximately $(python3 -c "print(f'{${NUM_COMPANIES} / 1000:.0f}')") minutes"
 echo ""
 
-# Run filtering
-python "$SCRIPT_DIR/../../entityidentity/companies/companyfilter.py" \
-    --input "$TABLES_DIR/companies.parquet" \
+# Use the companyfilter module directly
+python3 -m entityidentity.companies.companyfilter \
+    --input "$TABLES_DIR/companies_full.parquet" \
     --output "$TABLES_DIR/companies_filtered.parquet" \
     --provider "$LLM_PROVIDER" \
     --cache-file "$CACHE_DIR/classification_cache.json" \
@@ -200,11 +186,11 @@ python "$SCRIPT_DIR/../../entityidentity/companies/companyfilter.py" \
 
 if [ $? -eq 0 ]; then
     log_success "LLM filtering completed"
-    
+
     # Show filtered stats
-    python -c "
+    python3 -c "
 import pandas as pd
-original = pd.read_parquet('$TABLES_DIR/companies.parquet')
+original = pd.read_parquet('$TABLES_DIR/companies_full.parquet')
 filtered = pd.read_parquet('$TABLES_DIR/companies_filtered.parquet')
 print('')
 print(f'Original: {len(original):,} companies')
@@ -221,7 +207,7 @@ else
 fi
 
 # Step 3: Copy to package data
-print_header "Step 3/3: Copying to Package Data"
+print_header "Step 3/3: Preparing Distribution Files"
 
 log_info "Copying filtered data to package..."
 
@@ -230,7 +216,7 @@ cp "$TABLES_DIR/companies_filtered.parquet" "$PACKAGE_DATA_DIR/companies.parquet
 log_success "Copied companies.parquet"
 
 # Create CSV preview (5000 random samples)
-python -c "
+python3 -c "
 import pandas as pd
 df = pd.read_parquet('$PACKAGE_DATA_DIR/companies.parquet')
 n_samples = min(5000, len(df))
@@ -241,7 +227,7 @@ print(f'Created CSV preview with {len(preview):,} rows')
 log_success "Created companies.csv"
 
 # Create info file
-python -c "
+python3 -c "
 import pandas as pd
 from datetime import datetime
 
@@ -254,13 +240,13 @@ with open('$PACKAGE_DATA_DIR/companies_info.txt', 'w') as f:
     f.write(f'Generated: {datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}\n')
     f.write(f'Filter: Mining and Energy Companies (LLM-filtered)\n\n')
     f.write(f'Total Companies: {len(df):,}\n\n')
-    
+
     f.write('Breakdown by Country (Top 10):\n')
     for country, count in df['country'].value_counts().head(10).items():
         pct = count / len(df) * 100
         f.write(f'  - {country:5s}: {count:6,} companies ({pct:5.1f}%)\n')
     f.write('\n')
-    
+
     f.write('Data Coverage:\n')
     lei_count = df['lei'].notna().sum()
     f.write(f'  - With LEI: {lei_count:,} ({lei_count/len(df)*100:.1f}%)\n')
@@ -268,13 +254,13 @@ with open('$PACKAGE_DATA_DIR/companies_info.txt', 'w') as f:
         alias_count = df['alias1'].notna().sum()
         f.write(f'  - With Aliases: {alias_count:,} ({alias_count/len(df)*100:.1f}%)\n')
     f.write('\n')
-    
+
     f.write('=' * 70 + '\n')
 "
 log_success "Created companies_info.txt"
 
 # Check file sizes
-print_header "Size Check"
+print_header "File Size Check"
 
 parquet_size=$(du -h "$PACKAGE_DATA_DIR/companies.parquet" | cut -f1)
 csv_size=$(du -h "$PACKAGE_DATA_DIR/companies.csv" | cut -f1)
@@ -289,7 +275,7 @@ echo ""
 parquet_mb=$(du -m "$PACKAGE_DATA_DIR/companies.parquet" | cut -f1)
 if [ "$parquet_mb" -gt 20 ]; then
     log_error "Parquet file is ${parquet_mb}MB (> 20MB GitHub warning threshold)"
-    echo "Consider filtering more aggressively or splitting the file"
+    echo "Consider filtering more aggressively or using Git LFS"
     exit 1
 elif [ "$parquet_mb" -gt 10 ]; then
     log_warning "Parquet file is ${parquet_mb}MB (close to 20MB limit)"
@@ -303,12 +289,11 @@ print_header "Build Complete!"
 log_success "Filtered dataset ready for distribution"
 log_info "Location: $PACKAGE_DATA_DIR"
 log_info "Next steps:"
-echo "  1. Test the package: python -c 'from entityidentity import list_companies; print(list_companies())'"
+echo "  1. Test the package: python3 -c 'from entityidentity import list_companies; print(len(list_companies()))'"
 echo "  2. Review the data: cat $PACKAGE_DATA_DIR/companies_info.txt"
 echo "  3. Commit to git: git add $PACKAGE_DATA_DIR/*.parquet"
-echo "  4. Build package: python -m build"
-echo "  5. Publish to PyPI: python -m twine upload dist/*"
+echo "  4. Build package: python3 -m build"
+echo "  5. Publish to PyPI: python3 -m twine upload dist/*"
 echo ""
 
 log_success "Done! 🎉"
-

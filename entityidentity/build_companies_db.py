@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build consolidated companies.parquet from multiple data sources.
 
-This script fetches company data from:
+This module fetches company data from:
 - GLEIF LEI (global legal entities)
 - Wikidata (rich metadata and aliases)
 - Stock exchanges (ASX, LSE, TSX, etc.)
@@ -9,8 +9,14 @@ This script fetches company data from:
 And consolidates them into a single normalized companies.parquet file
 for use with the company identity resolution system.
 
-Usage:
+Primary API:
+    consolidate_companies() - Main function to build the consolidated dataset
+
+CLI Usage (for basic testing):
     python -m entityidentity.build_companies_db [--output companies.parquet] [--use-samples]
+
+For production use with full CLI features, use:
+    python scripts/companies/update_companies_db.py
 """
 
 from __future__ import annotations
@@ -253,9 +259,14 @@ def _normalize_exchange(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    """CLI entry point."""
+    """Simple CLI entry point for basic testing.
+
+    For production use with full features (backup, incremental updates, etc.),
+    use scripts/companies/update_companies_db.py instead.
+    """
     parser = argparse.ArgumentParser(
-        description="Build consolidated companies database from multiple sources"
+        description="Build consolidated companies database from multiple sources (basic CLI)",
+        epilog="For production use with full features, use: python scripts/companies/update_companies_db.py"
     )
     parser.add_argument(
         '--output', '-o',
@@ -278,29 +289,32 @@ def main():
         default='parquet',
         help='Output format (default: parquet)'
     )
-    
+
     args = parser.parse_args()
-    
+
     # Build consolidated dataset
-    print("=== Building Companies Database ===")
+    print("=== Building Companies Database (Basic Mode) ===")
     print(f"Output: {args.output}")
     print(f"Format: {args.format}")
     print(f"Using samples: {args.use_samples}")
-    
+    print("\nNote: For full features (backup, incremental updates, info files),")
+    print("use: python scripts/companies/update_companies_db.py")
+    print()
+
     companies = consolidate_companies(
         use_samples=args.use_samples,
         cache_dir=args.cache_dir,
     )
-    
+
     # Save output
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     if args.format == 'parquet':
         companies.to_parquet(output_path, index=False, compression='snappy')
     else:
         companies.to_csv(output_path, index=False)
-    
+
     print(f"\n✅ Saved {len(companies)} companies to {output_path}")
     print(f"   File size: {output_path.stat().st_size / 1024 / 1024:.2f} MB")
 

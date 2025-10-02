@@ -25,6 +25,16 @@ Three-stage fallback system with fuzzy matching:
 2. **pycountry** library as fallback
 3. **Custom fuzzy matching** for typos and colloquialisms
 
+### Metal Resolution System
+
+Multi-stage blocking and scoring pipeline for resolving metal names, symbols, and forms:
+1. **Exact symbol match** for short queries (≤3 chars)
+2. **Category bucket filter** (element/alloy/compound/specialty)
+3. **Name prefix blocking** (first 3 chars normalized)
+4. **Optional cluster filter** (supply chain groupings)
+5. **RapidFuzz WRatio scoring** across names and aliases
+6. **Form hint parsing** supporting "metal:form" syntax (e.g., "lithium:carbonate")
+
 ### LLM Classification System
 
 Optional LLM-based filtering for metals/mining industry companies:
@@ -135,9 +145,14 @@ entityidentity/
 │   ├── companyexchanges.py         # Stock exchange loaders
 │   ├── companyfilter.py            # LLM classification
 │   └── company_classifier_config.yaml  # LLM configuration
-└── countries/
-    ├── fuzzycountry.py              # Country resolution with fuzzy matching
-    └── countryapi.py                # Country API wrapper
+├── countries/
+│   ├── fuzzycountry.py              # Country resolution with fuzzy matching
+│   └── countryapi.py                # Country API wrapper
+└── metals/
+    ├── metalidentity.py             # Metal resolution engine
+    ├── metalnormalize.py            # Metal name normalization
+    ├── metalextractor.py            # Extract metals from text
+    └── metalapi.py                  # Public API functions
 ```
 
 ### Data Files

@@ -1,9 +1,26 @@
 #!/usr/bin/env python3
 """Filter company database to mining and energy sectors only.
 
+**DEPRECATED**: This standalone script is deprecated in favor of the unified
+filtering API in entityidentity.companies.companyfilter. Use that module instead:
+
+    from entityidentity.companies.companyfilter import filter_companies
+
+    # Keyword-only (same as this script)
+    filtered = filter_companies(df, strategy='keyword')
+
+    # Hybrid (keyword + LLM refinement, recommended)
+    filtered = filter_companies(df, strategy='hybrid')
+
+    # LLM-only (most accurate)
+    filtered = filter_companies(df, strategy='llm')
+
+This script remains for backwards compatibility but may be removed in future versions.
+
+---
+
 This script takes the full companies database and filters it to include only
-companies in the mining and energy sectors, keeping the database size manageable
-for GitHub distribution while focusing on relevant industries.
+companies in the mining and energy sectors using keyword-based rules.
 
 Sector Classification:
 - Mining: Metals, minerals, coal, precious metals

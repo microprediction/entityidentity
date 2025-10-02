@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Update or create the companies.parquet lookup database.
+"""Production CLI for updating/creating the companies.parquet lookup database.
 
-This script fetches fresh company data from all configured sources
-(GLEIF, Wikidata, stock exchanges) and builds a consolidated
-companies.parquet file for use with company identity resolution.
+This script provides a feature-rich CLI wrapper around the consolidate_companies()
+function with additional production features:
+- Automatic backups with timestamps
+- Incremental updates (merge with existing data)
+- CSV preview generation for inspection
+- Detailed info file with database statistics
+- Progress reporting and error handling
 
 Usage:
     # Basic usage (download all sources)
     python scripts/companies/update_companies_db.py
-    
+
     # Quick test with sample data
     python scripts/companies/update_companies_db.py --use-samples
-    
+
     # Specify output location
     python scripts/companies/update_companies_db.py --output data/companies.parquet
-    
+
     # Use cache directory to avoid re-downloading
     python scripts/companies/update_companies_db.py --cache-dir .cache
-    
-    # Incremental update (if exists, only fetch new data)
+
+    # Incremental update (merge with existing data)
     python scripts/companies/update_companies_db.py --incremental
+
+    # Create backup before updating
+    python scripts/companies/update_companies_db.py --backup
 
 Environment Variables:
     COMPANIES_DB_PATH: Default output path (default: tables/companies/companies.parquet)
@@ -27,12 +34,14 @@ Environment Variables:
 """
 
 import argparse
+import shutil
 import sys
+import traceback
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
 
-# Add parent directory to path
+# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from entityidentity.build_companies_db import consolidate_companies
@@ -100,9 +109,90 @@ def _write_info_file(info_path: Path, data: pd.DataFrame, args):
         f.write("=" * 70 + "\n")
 
 
+def _create_backup(output_path: Path) -> Path:
+    """Create timestamped backup of existing database.
+
+    Args:
+        output_path: Path to the existing database
+
+    Returns:
+        Path to the backup file
+    """
+    backup_path = output_path.with_suffix(
+        f'.{datetime.now().strftime("%Y%m%d_%H%M%S")}.parquet.bak'
+    )
+    print(f"💾 Creating backup: {backup_path}")
+    shutil.copy2(output_path, backup_path)
+    return backup_path
+
+
+def _merge_incremental(existing_data: pd.DataFrame, new_data: pd.DataFrame) -> pd.DataFrame:
+    """Merge new data with existing data, deduplicating intelligently.
+
+    Args:
+        existing_data: Current database
+        new_data: Newly fetched data
+
+    Returns:
+        Merged and deduplicated DataFrame
+    """
+    print()
+    print("🔗 Merging with existing data...")
+
+    # Combine old and new
+    combined = pd.concat([existing_data, new_data], ignore_index=True)
+
+    # Deduplicate (prioritize newer data by using keep='last')
+    print("   Deduplicating...")
+
+    # First dedupe by LEI
+    lei_records = combined[combined['lei'].notna() & (combined['lei'] != '')]
+    no_lei_records = combined[~combined.index.isin(lei_records.index)]
+
+    lei_deduped = lei_records.drop_duplicates(subset=['lei'], keep='last')
+    print(f"   - LEI dedupe: {len(lei_records)} → {len(lei_deduped)}")
+
+    # Then dedupe by name_norm + country
+    no_lei_deduped = no_lei_records.drop_duplicates(
+        subset=['name_norm', 'country'],
+        keep='last'
+    )
+    print(f"   - Name+country dedupe: {len(no_lei_records)} → {len(no_lei_deduped)}")
+
+    final_data = pd.concat([lei_deduped, no_lei_deduped], ignore_index=True)
+
+    print(f"   Total: {len(existing_data):,} + {len(new_data):,} → {len(final_data):,}")
+    return final_data
+
+
+def _create_csv_preview(parquet_path: Path, data: pd.DataFrame, max_rows: int = 5000) -> Path:
+    """Create a CSV preview file with a sample of the data.
+
+    Args:
+        parquet_path: Path to the parquet file
+        data: Full DataFrame
+        max_rows: Maximum rows for preview
+
+    Returns:
+        Path to the CSV preview file
+    """
+    csv_preview_path = parquet_path.with_suffix('.csv')
+    preview_rows = min(max_rows, len(data))
+    print(f"📄 Creating CSV preview: {csv_preview_path} ({preview_rows} rows, randomly sampled)")
+
+    if len(data) > max_rows:
+        preview_df = data.sample(n=max_rows, random_state=42)
+    else:
+        preview_df = data
+
+    preview_df.to_csv(csv_preview_path, index=False)
+    return csv_preview_path
+
+
 def main():
+    """Main entry point for production CLI."""
     parser = argparse.ArgumentParser(
-        description="Update companies lookup database from live sources",
+        description="Production company database updater with full features",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -168,20 +258,15 @@ def main():
     # Create cache directory
     args.cache_dir.mkdir(parents=True, exist_ok=True)
     
-    # Backup existing database if requested
+    # Handle existing database
     existing_data = None
     if args.output.exists():
         print(f"📁 Found existing database: {args.output}")
         print(f"   Size: {args.output.stat().st_size / 1024 / 1024:.2f} MB")
-        
+
         if args.backup:
-            backup_path = args.output.with_suffix(
-                f'.{datetime.now().strftime("%Y%m%d_%H%M%S")}.parquet.bak'
-            )
-            print(f"💾 Creating backup: {backup_path}")
-            import shutil
-            shutil.copy2(args.output, backup_path)
-        
+            _create_backup(args.output)
+
         if args.incremental:
             print("📥 Loading existing data for incremental update...")
             if args.format == 'parquet':
@@ -203,32 +288,7 @@ def main():
         
         # Merge with existing data if incremental
         if args.incremental and existing_data is not None:
-            print()
-            print("🔗 Merging with existing data...")
-            
-            # Combine old and new
-            combined = pd.concat([existing_data, new_data], ignore_index=True)
-            
-            # Deduplicate (prioritize newer data)
-            print("   Deduplicating...")
-            
-            # First by LEI
-            lei_records = combined[combined['lei'].notna() & (combined['lei'] != '')]
-            no_lei_records = combined[~combined.index.isin(lei_records.index)]
-            
-            lei_deduped = lei_records.drop_duplicates(subset=['lei'], keep='last')
-            print(f"   - LEI dedupe: {len(lei_records)} → {len(lei_deduped)}")
-            
-            # Then by name_norm + country
-            no_lei_deduped = no_lei_records.drop_duplicates(
-                subset=['name_norm', 'country'],
-                keep='last'
-            )
-            print(f"   - Name+country dedupe: {len(no_lei_records)} → {len(no_lei_deduped)}")
-            
-            final_data = pd.concat([lei_deduped, no_lei_deduped], ignore_index=True)
-            
-            print(f"   Total: {len(existing_data):,} + {len(new_data):,} → {len(final_data):,}")
+            final_data = _merge_incremental(existing_data, new_data)
         else:
             final_data = new_data
         
@@ -239,17 +299,10 @@ def main():
         
         if args.format == 'parquet':
             final_data.to_parquet(args.output, index=False, compression='snappy')
-            
-            # Also create a CSV preview with random sample of up to 5000 rows
-            csv_preview_path = args.output.with_suffix('.csv')
-            preview_rows = min(5000, len(final_data))
-            print(f"📄 Creating CSV preview: {csv_preview_path} ({preview_rows} rows, randomly sampled)")
-            if len(final_data) > 5000:
-                preview_df = final_data.sample(n=5000, random_state=42)
-            else:
-                preview_df = final_data
-            preview_df.to_csv(csv_preview_path, index=False)
-            
+
+            # Create CSV preview
+            _create_csv_preview(args.output, final_data)
+
             # Create info file with database statistics
             info_path = args.output.parent / 'companies_info.txt'
             print(f"📊 Creating info file: {info_path}")
@@ -299,7 +352,6 @@ def main():
         print("=" * 70)
         print(f"❌ Error: {e}")
         print("=" * 70)
-        import traceback
         traceback.print_exc()
         return 1
 
