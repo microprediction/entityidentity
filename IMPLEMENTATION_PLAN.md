@@ -1734,71 +1734,75 @@ normalized = normalize_unit({
 
 ## H. Implementation Roadmap
 
+**STATUS UPDATE (2025-10-02)**: Phase 1 is 67% complete. See REPO_STATUS.md for detailed analysis.
+
 ### Phase 1: Foundation (Week 1-2)
 
-**PR #1: Baskets Module**
-- [ ] Create `entityidentity/baskets/` structure
-- [ ] Implement `basketapi.py` (identifier, match, list, load)
-- [ ] Implement `basketidentity.py` (blocking/scoring pipeline)
-- [ ] Implement `basketnormalize.py`
-- [ ] Create `data/baskets.yaml` with ~20 common baskets
-- [ ] Implement `data/build_baskets.py` (YAML → Parquet builder)
-- [ ] Add tests: `tests/baskets/test_basketapi.py`, `test_normalization.py`
-- [ ] Update package `__init__.py` exports
-- [ ] Update README with baskets section
+**PR #1: Baskets Module** ✅ COMPLETED
+- [x] Create `entityidentity/baskets/` structure
+- [x] Implement `basketapi.py` (identifier, match, list, load)
+- [x] Implement `basketidentity.py` (blocking/scoring pipeline)
+- [x] Implement `basketnormalize.py`
+- [x] Create `data/baskets.yaml` with 5 common baskets (PGM 4E/5E, NdPr, REE Light, Battery Pack)
+- [x] Implement `data/build_baskets.py` (YAML → Parquet builder using build_framework.py)
+- [x] Add tests: `tests/baskets/test_basketapi.py` (74 tests, all passing ✓)
+- [x] Update package `__init__.py` exports
+- [x] Add baskets/README.md documentation
+- [ ] Update main README with baskets section
 
-**PR #2: Period Module**
-- [ ] Create `entityidentity/period/` structure
-- [ ] Implement `periodapi.py` (identifier, extract)
-- [ ] Implement `periodidentity.py` (text → Period resolver)
-- [ ] Implement `periodnormalize.py`
+**PR #2: Period Module** ✅ COMPLETED (needs export)
+- [x] Create `entityidentity/period/` structure
+- [x] Implement `periodapi.py` (identifier, extract, format_period_display)
+- [x] Implement `periodidentity.py` (text → Period resolver with ISO 8601 weeks)
+- [x] Implement `periodnormalize.py`
+- [x] Add period/README.md documentation
 - [ ] Add tests: `tests/test_period.py` (20+ test cases)
-- [ ] Update package `__init__.py` exports
-- [ ] Update README with period section
+- [ ] Update package `__init__.py` exports (HIGH PRIORITY - functions exist but not exported)
+- [ ] Update main README with period section
 
-**PR #3: Places Module**
+**PR #3: Places Module** ⏭️ NEXT
 - [ ] Create `entityidentity/places/` structure
 - [ ] Implement `placeapi.py` (identifier, extract_location, list, load)
 - [ ] Implement `placeidentity.py` (admin1 matching with country blocking)
 - [ ] Implement `placenormalize.py`
-- [ ] Create `data/build_admin1.py` (Natural Earth → Parquet)
-- [ ] Build `data/admin1.parquet` (~5000 regions)
+- [ ] Create `data/build_admin1.py` (GeoNames → Parquet per DATA_SOURCES.md)
+- [ ] Build `data/admin1.parquet` (~5000 regions from GeoNames admin1CodesASCII.txt)
 - [ ] Add tests: `tests/test_places.py` (15+ test cases)
 - [ ] Update package `__init__.py` exports
-- [ ] Update README with places section
+- [ ] Update main README with places section
 
 ### Phase 2: Conversion & Ground Truth (Week 3-4)
 
-**PR #4: Units Module**
+**PR #4: Units Module** ⏭️ BLOCKED (waiting for places)
 - [ ] Create `entityidentity/units/` structure
 - [ ] Implement `unitapi.py` (normalize_unit)
 - [ ] Implement `unitnorm.py` (conversion logic)
 - [ ] Create `unitconfig.yaml` (FeCr, APT, etc. rules)
 - [ ] Add tests: `tests/test_units.py` (15+ test cases)
 - [ ] Update package `__init__.py` exports
-- [ ] Update README with units section
+- [ ] Update main README with units section
 
-**PR #5: Instruments Module**
+**PR #5: Instruments Module** ⏭️ BLOCKED (waiting for places)
 - [ ] Create `entityidentity/instruments/` structure
 - [ ] Implement `instrumentapi.py` (identifier, match, list, load)
 - [ ] Implement `instrumentloaders.py` (GCS + local loading)
 - [ ] Implement `instrumentidentity.py` (blocking/scoring with regex)
 - [ ] Add crosswalk: material_hint → metal_identifier → cluster_id
-- [ ] Add tests: `tests/test_instruments.py` (12+ test cases)
+- [ ] Add tests: `tests/test_instruments.py` (20+ test cases)
 - [ ] Update package `__init__.py` exports
-- [ ] Update README with instruments section
+- [ ] Update main README with instruments section
 
 ### Phase 3: Facilities (Week 5 - Optional)
 
-**PR #6: Facilities Module (Stub or Full)**
+**PR #6: Facilities Module (Stub or Full)** ⏭️ BLOCKED (depends on places)
 - [ ] Create `entityidentity/facilities/` structure
 - [ ] Implement `facilityapi.py` (link_facility)
-- [ ] Implement `facilitylink.py` (blocking, feature scoring, decision)
-- [ ] Add tests: `tests/test_facilities.py` (skip if no data)
+- [ ] Implement `facilitylink.py` (blocking, feature scoring, decision with place_hint)
+- [ ] Add tests: `tests/test_facilities.py` (20+ test cases)
 - [ ] Update package `__init__.py` exports
-- [ ] Update README with facilities section
+- [ ] Update main README with facilities section
 
-**Note**: If facilities master data not available, implement as **stub** with company-only fallback.
+**Note**: Facilities module REQUIRES places/ for `place_hint` parameter. See REPO_STATUS.md.
 
 ### Phase 4: Integration & Documentation (Week 6)
 
@@ -1810,6 +1814,11 @@ normalized = normalize_unit({
 - [ ] Update main README with complete API reference
 - [ ] Version bump to v0.2.0
 - [ ] Release notes
+
+**Infrastructure Improvements Completed** ✅:
+- [x] Refactor utils/ into dataloader, normalize, resolver, build_utils
+- [x] Create build_framework.py for generic YAML → Parquet builds
+- [x] Deprecate shared_utils.py with backward compatibility
 
 ---
 

@@ -81,6 +81,16 @@ from .baskets.basketapi import (
 )
 
 # ============================================================================
+# Period Resolution API
+# ============================================================================
+
+from .period.periodapi import (
+    period_identifier,       # Primary API - resolve period text to canonical form
+    extract_periods,         # Extract multiple periods from text
+    format_period_display,   # Format period for display
+)
+
+# ============================================================================
 # Build Utilities (for database generation)
 # ============================================================================
 
@@ -99,6 +109,7 @@ __all__ = [
     "country_identifier",   # Resolve country name -> ISO code
     "metal_identifier",     # Resolve metal name -> canonical form
     "basket_identifier",    # Resolve basket name -> canonical form
+    "period_identifier",    # Resolve period text -> canonical form
 
     # ========================================================================
     # Company Resolution
@@ -133,6 +144,13 @@ __all__ = [
     "list_baskets",            # List all available baskets
     "get_basket_components",   # Get component metals for a basket
     "load_baskets",            # Load baskets database
+
+    # ========================================================================
+    # Period Resolution
+    # ========================================================================
+    "period_identifier",       # Resolve period text to canonical form
+    "extract_periods",         # Extract multiple periods from text
+    "format_period_display",   # Format period for display
 
     # ========================================================================
     # Build Utilities

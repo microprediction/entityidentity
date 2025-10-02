@@ -6,9 +6,34 @@ This file contains a series of prompts to guide Claude Code through implementing
 
 ---
 
+## STATUS UPDATE (2025-10-02)
+
+**Phase 1 Progress**: 2 of 3 modules completed (67%)
+
+| Prompt | Module | Status | Notes |
+|--------|--------|--------|-------|
+| 1A-1B | Baskets | ✅ COMPLETED | 74 tests passing, README complete |
+| 1C-1D | Period | ✅ COMPLETED | Implementation done, needs export in __init__.py |
+| 1E | Places | ⏭️ NEXT | Required for facilities module |
+
+**Immediate Actions**:
+1. ✅ Export period APIs in `entityidentity/__init__.py` (add 3 lines)
+2. ⏭️ Execute Prompt 1E (Places Module)
+3. ⏭️ Execute Prompt 2A (Units Module)
+4. ⏭️ Execute Prompt 2B (Instruments Module)
+
+See [REPO_STATUS.md](REPO_STATUS.md) for detailed analysis.
+
+---
+
 ## Phase 1: Foundation
 
-### Prompt 1A: Baskets Module - Core Structure
+### Prompt 1A: Baskets Module - Core Structure ✅ COMPLETED
+
+**Status**: Implementation complete. See [entityidentity/baskets/](entityidentity/baskets/)
+
+<details>
+<summary>Original Prompt (click to expand)</summary>
 
 ```
 I need you to implement the baskets module following IMPLEMENTATION_PLAN.md section B.2 (Baskets API).
@@ -45,10 +70,18 @@ Show me the complete implementation with inline comments explaining the blocking
 - ✅ Module loads without errors
 - ✅ `basket_identifier("PGM 4E")` returns expected structure
 - ✅ Builder creates valid baskets.parquet
+```
+
+</details>
 
 ---
 
-### Prompt 1B: Baskets Module - Tests
+### Prompt 1B: Baskets Module - Tests ✅ COMPLETED
+
+**Status**: 74 tests implemented and passing. See [tests/baskets/](tests/baskets/)
+
+<details>
+<summary>Original Prompt (click to expand)</summary>
 
 ```
 Now implement comprehensive tests for the baskets module in tests/baskets/.
@@ -81,9 +114,18 @@ Run pytest and show me the coverage report for the baskets module.
 - ✅ Coverage ≥85% for baskets module
 - ✅ Tests follow existing patterns
 
+</details>
+
 ---
 
-### Prompt 1C: Period Module - Complete Implementation
+### Prompt 1C: Period Module - Complete Implementation ✅ COMPLETED
+
+**Status**: Implementation complete. See [entityidentity/period/](entityidentity/period/)
+
+**⚠️ ACTION REQUIRED**: Period APIs not yet exported in `entityidentity/__init__.py` - see Prompt 1D
+
+<details>
+<summary>Original Prompt (click to expand)</summary>
 
 ```
 Implement the period module following IMPLEMENTATION_PLAN.md section B.3 (Period API).
@@ -119,9 +161,67 @@ Show me the implementation with comprehensive inline comments.
 - ✅ ISO weeks start Monday
 - ✅ Ranges have correct start/end timestamps
 
+</details>
+
 ---
 
-### Prompt 1D: Period Module - Tests
+### Prompt 1D: Period Module - Export APIs ⚠️ HIGH PRIORITY
+
+**Status**: Implementation complete but APIs not yet exported. Quick 5-minute task.
+
+```
+The period module is fully implemented but not yet exported in the main package.
+
+Please update entityidentity/__init__.py to export the period APIs:
+
+1. Add import section after Basket Resolution API:
+```python
+# ============================================================================
+# Period Resolution API
+# ============================================================================
+
+from .period.periodapi import (
+    period_identifier,       # Primary API - resolve period text to canonical form
+    extract_periods,         # Extract multiple periods from text
+    format_period_display,   # Format period for display
+)
+```
+
+2. Update __all__ list to include:
+```python
+    # ========================================================================
+    # Period Resolution
+    # ========================================================================
+    "period_identifier",       # Resolve period text to canonical form
+    "extract_periods",         # Extract multiple periods from text
+    "format_period_display",   # Format period for display
+```
+
+3. Update the docstring at the top to include period example:
+```python
+    # Resolve period names
+    period = period_identifier("H2 2026")  # Returns: {'period_type': 'half', 'period_id': '2026H2', ...}
+```
+
+Then verify it works:
+```bash
+python -c "from entityidentity import period_identifier; print(period_identifier('H2 2026'))"
+```
+
+**Success Criteria**:
+- ✅ period_identifier importable from entityidentity
+- ✅ All 3 functions exported correctly
+- ✅ Docstring updated with example
+```
+
+---
+
+### Prompt 1D-OLD: Period Module - Tests ⏭️ TODO
+
+**Status**: Tests not yet written (module is functional but needs test coverage)
+
+<details>
+<summary>Original Prompt (click to expand)</summary>
 
 ```
 Implement comprehensive tests for the period module in tests/test_period.py.
@@ -155,11 +255,63 @@ Run pytest and show me results with coverage.
 - ✅ Coverage ≥90% for period module
 - ✅ Edge cases handled correctly
 
+</details>
+
+---
+
+### Prompt 1E: Places Module - Implementation ⏭️ NEXT PRIORITY
+
+**Status**: Not yet started. **REQUIRED** for facilities module.
+
+```
+Implement the places module following IMPLEMENTATION_PLAN.md section B.4 (Places API).
+
+Create:
+- entityidentity/places/
+  - __init__.py
+  - placeapi.py (place_identifier, extract_location, list_places, load_places)
+  - placeidentity.py (admin1 matching with country blocking)
+  - placenormalize.py (normalization helpers)
+  - data/build_admin1.py (GeoNames → Parquet builder)
+  - README.md
+
+Follow the same blocking → scoring → decision pattern as companies/metals.
+
+Blocking strategy:
+1. Extract country via country_identifier() (reuse existing)
+2. Filter admin1 by country if found (5000 → ~50 per country)
+3. Prefix match on admin1_name + aliases
+4. RapidFuzz WRatio scoring
+
+Data source (per DATA_SOURCES.md):
+- Download GeoNames admin1CodesASCII.txt from https://download.geonames.org/export/dump/
+- Parse tab-separated format: country.admin1_code, name, ascii_name, geonameid
+- Build parquet with columns: country, admin1, admin1_code, lat, lon, aliases
+
+Example usage:
+```python
+from entityidentity.places import place_identifier
+
+# Resolve with country hint
+place = place_identifier("Limpopo", country_hint="ZA")
+# Returns: {'country': 'ZA', 'admin1': 'Limpopo', 'admin1_code': 'ZA-LP', ...}
+
+# Resolve without hint (tries all countries)
+place = place_identifier("Western Australia")
+# Returns: {'country': 'AU', 'admin1': 'Western Australia', 'admin1_code': 'AU-WA', ...}
+```
+
+Success Criteria:
+- ✅ place_identifier("Limpopo", country_hint="ZA") works
+- ✅ Country blocking reduces search space 99%+
+- ✅ admin1.parquet built from GeoNames data
+```
+
 ---
 
 ## Phase 2: Conversion & Ground Truth
 
-### Prompt 2A: Units Module - Implementation
+### Prompt 2A: Units Module - Implementation ⏭️ TODO
 
 ```
 Implement the units module following IMPLEMENTATION_PLAN.md section B.4 (Units API).
