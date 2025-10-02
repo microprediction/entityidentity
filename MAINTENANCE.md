@@ -7,7 +7,7 @@ Internal documentation for developers and maintainers of the EntityIdentity pack
 ### Quick Test Build (Sample Data)
 
 ```bash
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 ```
 
 This creates:
@@ -18,7 +18,7 @@ This creates:
 ### Full Build (Live Data Sources)
 
 ```bash
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 **Warning**: Downloads ~2-3GB of data and takes 30-60 minutes.
@@ -256,7 +256,7 @@ entityidentity/
 
 scripts/
 └── companies/
-    ├── update_companies_db.py       # Build database
+    ├── build_database_cli.py       # Build database
     └── filter_mining_energy_llm.sh  # LLM filtering
 
 tables/
@@ -284,7 +284,7 @@ __version__ = "0.0.2"
 ### 2. Build Sample Database
 
 ```bash
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 ```
 
 Commit the generated files:
@@ -325,7 +325,7 @@ twine upload dist/*
 
 Users can generate the full database after installation:
 ```bash
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 ```
 
 ## Architecture Decisions
@@ -363,7 +363,7 @@ python scripts/companies/update_companies_db.py --use-samples
 
 ```bash
 # Generate sample data
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 ```
 
 ### Import Error: pandas not installed
@@ -433,7 +433,7 @@ Typical query: <100ms for 1M+ companies
 1. Create loader in `entityidentity/companies/companyXXX.py`
 2. Return DataFrame with required columns: `name`, `country`
 3. Optional columns: `lei`, `ticker`, `industry`, `aliases`
-4. Add to `update_companies_db.py` consolidation
+4. Add to `build_database_cli.py` consolidation
 5. Write tests in `tests/companies/test_loaders.py`
 
 ### Updating LLM Prompts

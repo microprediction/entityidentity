@@ -15,6 +15,11 @@ from entityidentity.metals.metalidentity import (
     resolve_metal as _resolve_metal,
     topk_matches as _topk_matches,
 )
+from entityidentity.utils.dataloader import (
+    find_data_file,
+    load_parquet_or_csv,
+    format_not_found_error,
+)
 
 
 @lru_cache(maxsize=1)
@@ -46,18 +51,33 @@ def load_metals(path: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         >>> df[['name', 'symbol', 'category_bucket']].head()
     """
     if path is None:
-        # Default to data directory adjacent to this module
-        metals_dir = Path(__file__).parent / "data"
-        path = metals_dir / "metals.parquet"
-
-    path = Path(path)
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Metals data file not found: {path}\n"
-            f"Run entityidentity/metals/data/build_metals.py to generate it."
+        # Use shared utility to find data file (metals data is in metals/data/)
+        found_path = find_data_file(
+            module_file=__file__,
+            subdirectory="metals",
+            filenames=["metals.parquet"],
+            search_dev_tables=False,  # Metals data only in package, not tables/
+            module_local_data=True,  # Check metals/data/ directory
         )
 
-    return pd.read_parquet(path)
+        if found_path is None:
+            # Generate helpful error message
+            metals_dir = Path(__file__).parent / "data"
+            error_msg = format_not_found_error(
+                subdirectory="metals",
+                searched_locations=[
+                    ("Module-local data", metals_dir),
+                ],
+                fix_instructions=[
+                    "Run entityidentity/metals/data/build_metals.py to generate it.",
+                ],
+            )
+            raise FileNotFoundError(error_msg)
+
+        path = found_path
+
+    # Load data using shared utility
+    return load_parquet_or_csv(Path(path))
 
 
 def metal_identifier(

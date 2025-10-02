@@ -16,6 +16,11 @@ from entityidentity.companies.companynormalize import (
 )
 from entityidentity.companies.companyblocking import block_candidates
 from entityidentity.companies.companyscoring import score_candidates
+from entityidentity.utils.dataloader import (
+    find_data_file,
+    load_parquet_or_csv,
+    format_not_found_error,
+)
 
 
 @lru_cache(maxsize=1)
@@ -40,45 +45,43 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
         DATA_LOCATIONS.md for detailed explanation of data directories
     """
     if data_path is None:
-        # Priority 1: Package data (distributed with pip, always available)
-        pkg_dir = Path(__file__).parent.parent
-        data_dir = pkg_dir / "data" / "companies"
-        for candidate in ["companies.parquet", "companies.csv"]:
-            p = data_dir / candidate
-            if p.exists():
-                data_path = str(p)
-                break
+        # Use shared utility to find data file
+        found_path = find_data_file(
+            module_file=__file__,
+            subdirectory="companies",
+            filenames=["companies.parquet", "companies.csv"],
+            search_dev_tables=True,
+        )
 
-        # Priority 2: Development data (built locally, comprehensive)
-        if data_path is None:
+        if found_path is None:
+            # Generate helpful error message
+            pkg_dir = Path(__file__).parent.parent
+            data_dir = pkg_dir / "data" / "companies"
             tables_dir = pkg_dir.parent / "tables" / "companies"
-            for candidate in ["companies.parquet", "companies.csv"]:
-                p = tables_dir / candidate
-                if p.exists():
-                    data_path = str(p)
-                    break
 
-        # Not found in any location
-        if data_path is None:
-            raise FileNotFoundError(
-                "No companies data found in standard locations.\n\n"
-                "Searched:\n"
-                f"  1. Package data: {data_dir}\n"
-                f"  2. Development data: {tables_dir}\n\n"
-                "To fix:\n"
-                "  • For sample data (~500 companies):\n"
-                "      python scripts/companies/update_companies_db.py --use-samples\n\n"
-                "  • For full database (100K+ companies, 30-60 min):\n"
-                "      python scripts/companies/update_companies_db.py\n\n"
-                "See DATA_LOCATIONS.md for details on data organization."
+            error_msg = format_not_found_error(
+                subdirectory="companies",
+                searched_locations=[
+                    ("Package data", data_dir),
+                    ("Development data", tables_dir),
+                ],
+                fix_instructions=[
+                    "For sample data (~500 companies):\n"
+                    "      python scripts/companies/build_database_cli.py --use-samples",
+                    "For full database (100K+ companies, 30-60 min):\n"
+                    "      python scripts/companies/build_database_cli.py",
+                    "See DATA_LOCATIONS.md for details on data organization.",
+                ],
             )
+            raise FileNotFoundError(error_msg)
 
+        data_path = str(found_path)
+
+    # Load data using shared utility
     path = Path(data_path)
-    if path.suffix == ".parquet":
-        df = pd.read_parquet(data_path)
-    else:
-        df = pd.read_csv(data_path)
+    df = load_parquet_or_csv(path)
 
+    # Add computed columns if missing
     if "name_norm" not in df.columns:
         df["name_norm"] = df["name"].map(normalize_company_name)
 

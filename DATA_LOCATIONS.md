@@ -45,7 +45,7 @@ entityidentity/
 **How to Update:**
 ```bash
 # Build sample data from full dataset
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # This generates data in entityidentity/data/companies/
 ```
@@ -81,7 +81,7 @@ python scripts/companies/update_companies_db.py --use-samples
 **How to Build:**
 ```bash
 # Build full database
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # Build filtered database (mining/energy only)
 python -m entityidentity.companies.companyfilter \
@@ -183,7 +183,7 @@ pip install entityidentity
 # Clone repository and build
 git clone https://github.com/microprediction/entityidentity
 cd entityidentity
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 ---
@@ -197,7 +197,7 @@ cd entityidentity
 pip install -e .  # Install in development mode
 
 # Build full database
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 **Data Available:**
@@ -226,7 +226,7 @@ RUN pip install entityidentity
 # Download and build full database
 WORKDIR /data
 RUN git clone https://github.com/microprediction/entityidentity
-RUN cd entityidentity && python scripts/companies/update_companies_db.py
+RUN cd entityidentity && python scripts/companies/build_database_cli.py
 
 # Copy built database to app
 COPY entityidentity/tables/companies/companies.parquet /app/data/
@@ -319,10 +319,10 @@ When the full database schema changes, update the sample:
 
 ```bash
 # Rebuild full database
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # Regenerate sample (creates entityidentity/data/companies/)
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # Commit the updated sample
 git add entityidentity/data/companies/

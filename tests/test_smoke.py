@@ -35,7 +35,7 @@ class TestAPIImports:
             company_identifier,
             match_company,
             resolve_company,
-            normalize_name,
+            normalize_company_name,
             extract_companies,
             get_company_id,
         )
@@ -43,7 +43,7 @@ class TestAPIImports:
         assert callable(company_identifier)
         assert callable(match_company)
         assert callable(resolve_company)
-        assert callable(normalize_name)
+        assert callable(normalize_company_name)
         assert callable(extract_companies)
         assert callable(get_company_id)
 

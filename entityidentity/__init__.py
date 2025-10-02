@@ -28,7 +28,6 @@ from .companies.companyapi import (
     get_identifier,          # Alias for backwards compatibility
     normalize_company_name,  # Normalize company names for matching
     canonicalize_company_name, # Canonicalize names for display/identifiers
-    normalize_name,          # DEPRECATED - use normalize_company_name
     match_company,           # Get best matching company with details
     resolve_company,         # Get resolution with all candidates and scores
     list_companies,          # List/filter companies in database
@@ -80,7 +79,6 @@ __all__ = [
     "resolve_company",           # Get resolution with scores
     "normalize_company_name",    # Normalize names for matching
     "canonicalize_company_name", # Canonicalize names for display
-    "normalize_name",            # DEPRECATED - use normalize_company_name
     "extract_companies",         # Extract companies from text
     "list_companies",            # List companies in database
     "get_company_id",            # Format company as ID string

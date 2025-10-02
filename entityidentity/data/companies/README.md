@@ -27,7 +27,7 @@ For comprehensive company resolution, build the full database:
 
 ```bash
 # Build full database (100K+ companies, takes 30-60 minutes)
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # This creates: tables/companies/companies.parquet (~10-50MB)
 ```
@@ -83,7 +83,7 @@ To update the sample dataset:
 
 ```bash
 # Rebuild sample from full database
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # This script:
 # 1. Loads full database from tables/companies/

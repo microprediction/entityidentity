@@ -11,22 +11,22 @@ function with additional production features:
 
 Usage:
     # Basic usage (download all sources)
-    python scripts/companies/update_companies_db.py
+    python scripts/companies/build_database_cli.py
 
     # Quick test with sample data
-    python scripts/companies/update_companies_db.py --use-samples
+    python scripts/companies/build_database_cli.py --use-samples
 
     # Specify output location
-    python scripts/companies/update_companies_db.py --output data/companies.parquet
+    python scripts/companies/build_database_cli.py --output data/companies.parquet
 
     # Use cache directory to avoid re-downloading
-    python scripts/companies/update_companies_db.py --cache-dir .cache
+    python scripts/companies/build_database_cli.py --cache-dir .cache
 
     # Incremental update (merge with existing data)
-    python scripts/companies/update_companies_db.py --incremental
+    python scripts/companies/build_database_cli.py --incremental
 
     # Create backup before updating
-    python scripts/companies/update_companies_db.py --backup
+    python scripts/companies/build_database_cli.py --backup
 
 Environment Variables:
     COMPANIES_DB_PATH: Default output path (default: tables/companies/companies.parquet)

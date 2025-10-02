@@ -16,7 +16,7 @@ CLI Usage (for basic testing):
     python -m entityidentity.build_companies_db [--output companies.parquet] [--use-samples]
 
 For production use with full CLI features, use:
-    python scripts/companies/update_companies_db.py
+    python scripts/companies/build_database_cli.py
 """
 
 from __future__ import annotations
@@ -262,11 +262,11 @@ def main():
     """Simple CLI entry point for basic testing.
 
     For production use with full features (backup, incremental updates, etc.),
-    use scripts/companies/update_companies_db.py instead.
+    use scripts/companies/build_database_cli.py instead.
     """
     parser = argparse.ArgumentParser(
         description="Build consolidated companies database from multiple sources (basic CLI)",
-        epilog="For production use with full features, use: python scripts/companies/update_companies_db.py"
+        epilog="For production use with full features, use: python scripts/companies/build_database_cli.py"
     )
     parser.add_argument(
         '--output', '-o',
@@ -298,7 +298,7 @@ def main():
     print(f"Format: {args.format}")
     print(f"Using samples: {args.use_samples}")
     print("\nNote: For full features (backup, incremental updates, info files),")
-    print("use: python scripts/companies/update_companies_db.py")
+    print("use: python scripts/companies/build_database_cli.py")
     print()
 
     companies = consolidate_companies(

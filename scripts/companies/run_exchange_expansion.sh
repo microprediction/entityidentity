@@ -65,6 +65,6 @@ echo "     cp entityidentity/data/companies/companies_expanded.parquet entityide
 echo "     cp entityidentity/data/companies/companies_expanded.csv entityidentity/data/companies/companies.csv"
 echo ""
 echo "  3. Regenerate info file:"
-echo "     python scripts/companies/update_companies_db.py --info-only"
+echo "     python scripts/companies/build_database_cli.py --info-only"
 echo ""
 

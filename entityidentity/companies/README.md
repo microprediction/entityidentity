@@ -102,10 +102,10 @@ Build the companies database:
 
 ```bash
 # Use samples for testing (fast)
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # Build full database from live sources
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # Filter to mining/energy companies
 python -m entityidentity.companies.companyfilter \
@@ -147,7 +147,7 @@ Source priority: GLEIF > Wikidata > Exchanges (for stable identifiers)
 pytest tests/companies/ -v
 
 # Build database with samples
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # Test resolution
 python -c "from entityidentity import company_identifier; print(company_identifier('Apple'))"

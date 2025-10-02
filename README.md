@@ -91,7 +91,7 @@ Batch processing:
 Plus supporting functions:
 - **`list_companies()`** - Browse available companies
 - **`extract_companies(text)`** - Find company mentions in text
-- **`normalize_name(name)`** - Normalize company names for matching
+- **`normalize_company_name(name)`** - Normalize company names for matching
 - **`list_metals(category=None, cluster=None)`** - List metals by category/cluster
 - **`match_metal(name, k=5)`** - Get top-K metal candidates with scores
 - **`extract_metals_from_text(text)`** - Extract metal references from text
@@ -185,7 +185,7 @@ To ensure consistent identifiers regardless of load order or source formatting, 
 4. **Keep essential characters**: Letters, numbers, spaces, hyphens, ampersands
 5. **Collapse multiple spaces**: `"BHP  Group"` → `"BHP Group"`
 
-This is handled by `canonicalize_name()` in `entityidentity.companies.companynormalize`.
+This is handled by `canonicalize_company_name()` in `entityidentity.companies.companynormalize`.
 
 ### Source Priority System
 
@@ -365,37 +365,13 @@ Load full company database into memory.
 
 ### Supporting Functions
 
-#### `list_companies(country=None, search=None, limit=None, data_path=None)`
-
-List companies with optional filtering.
-
-**Parameters**:
-- `country` (str, optional): ISO 2-letter country code filter
-- `search` (str, optional): Search term for company names
-- `limit` (int, optional): Maximum number of results
-- `data_path` (str, optional): Path to custom data file
-
-**Returns**: pandas DataFrame with filtered company data
-
-**Examples**:
-```python
-# List all US companies
-us = list_companies(country="US")
-
-# Search for mining companies
-mining = list_companies(search="mining")
-
-# Top 10 Australian companies
-top_au = list_companies(country="AU", limit=10)
-```
-
-#### `normalize_name(name)`
+#### `normalize_company_name(name)`
 
 Normalize company name for matching (removes legal suffixes, unicode, etc.)
 
 **Example**:
 ```python
-normalize_name("Apple Inc.")  # → 'apple'
+normalize_company_name("Apple Inc.")  # → 'apple'
 ```
 
 ## Advanced Usage
@@ -453,7 +429,8 @@ filtered = companies[
 
 ## Support
 
-- **Documentation**: See [MAINTENANCE.md](MAINTENANCE.md) for development details
+- **Development**: See [CLAUDE.md](CLAUDE.md) for architecture and development notes
+- **Maintenance**: See [MAINTENANCE.md](MAINTENANCE.md) for maintenance procedures
 - **Issues**: Report bugs on GitHub
 - **License**: MIT
 

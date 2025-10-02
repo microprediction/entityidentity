@@ -12,7 +12,6 @@ Architecture:
 from entityidentity.companies.companyapi import (
     normalize_company_name,
     canonicalize_company_name,
-    normalize_name,  # DEPRECATED - use normalize_company_name
     match_company,
     resolve_company,
     list_companies,
@@ -50,7 +49,6 @@ __all__ = [
     # Main API
     "normalize_company_name",
     "canonicalize_company_name",
-    "normalize_name",  # DEPRECATED
     "match_company",
     "resolve_company",
     "list_companies",

@@ -141,9 +141,9 @@ log_info "Fetching companies from all sources..."
 log_info "This will take approximately $(python3 -c "print(f'{${NUM_COMPANIES} / 200 * 1.1 / 60:.0f}')") minutes"
 echo ""
 
-# Use the update_companies_db.py script directly
+# Use the build_database_cli.py script directly
 cd "$PROJECT_ROOT"
-python3 scripts/companies/update_companies_db.py \
+python3 scripts/companies/build_database_cli.py \
     --output "$TABLES_DIR/companies_full.parquet" \
     --cache-dir "$CACHE_DIR"
 

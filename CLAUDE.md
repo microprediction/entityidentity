@@ -4,210 +4,111 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-EntityIdentity is a Python package for company and country entity resolution. It provides fast, in-memory resolution of messy company names (tickers, abbreviations, variations) to stable canonical identifiers using fuzzy matching and smart normalization.
+EntityIdentity is a Python package for company and country entity resolution. See README.md for user documentation.
 
-## High-Level Architecture
+## Development Quick Reference
 
-### Core Resolution Pipeline
-
-The package implements a multi-stage resolution pipeline for company matching:
-
-1. **Data Loading & Consolidation**: Multiple data sources (GLEIF, Wikidata, stock exchanges) are loaded and deduplicated using a deterministic priority system (GLEIF > Wikidata > Exchanges) to ensure stable identifiers
-2. **Normalization Layer**: Company names undergo multi-step normalization (legal suffix removal, unicode conversion, canonicalization) with caching via `@lru_cache`
-3. **Blocking Strategy**: Candidates are filtered by country code and first-token prefix, reducing search space by 99%+
-4. **Fuzzy Matching**: RapidFuzz library performs optimized string matching with configurable thresholds
-5. **Decision Engine**: Scoring system determines confidence levels (auto_high_conf, needs_hint_or_llm, etc.)
-
-### Country Resolution Pipeline
-
-Three-stage fallback system with fuzzy matching:
-1. **country_converter** library for primary resolution
-2. **pycountry** library as fallback
-3. **Custom fuzzy matching** for typos and colloquialisms
-
-### Metal Resolution System
-
-Multi-stage blocking and scoring pipeline for resolving metal names, symbols, and forms:
-1. **Exact symbol match** for short queries (≤3 chars)
-2. **Category bucket filter** (element/alloy/compound/specialty)
-3. **Name prefix blocking** (first 3 chars normalized)
-4. **Optional cluster filter** (supply chain groupings)
-5. **RapidFuzz WRatio scoring** across names and aliases
-6. **Form hint parsing** supporting "metal:form" syntax (e.g., "lithium:carbonate")
-
-### LLM Classification System
-
-Optional LLM-based filtering for metals/mining industry companies:
-- Configurable via YAML for sector definitions and prompts
-- Persistent caching in `.cache/companies/classifications.json`
-- Supports both OpenAI and Anthropic APIs
-- Classification categories: supply (mining/recycling), demand (manufacturing/electronics), both, or irrelevant
-
-## Common Development Commands
-
-### Installation & Setup
+### Setup
 ```bash
-# Install package in development mode
-pip install -e .
-
-# Install with development dependencies
-pip install -r requirements-dev.txt
-
-# Build sample database (required for first use)
-python scripts/companies/update_companies_db.py --use-samples
+pip install -e .                                      # Install in dev mode
+python scripts/companies/build_database_cli.py --use-samples  # Build sample DB
 ```
 
 ### Testing
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage report
-pytest --cov=entityidentity
-
-# Run specific test file
-pytest tests/companies/test_companyidentity.py -v
-
-# Run with live API calls (GLEIF, Wikidata)
-ENTITYIDENTITY_TEST_LIVE=1 pytest -v
+pytest                                                # Run all tests
+pytest --cov=entityidentity                          # With coverage
+ENTITYIDENTITY_TEST_LIVE=1 pytest -v                 # Include live API tests
 ```
 
-### Database Building
-```bash
-# Build sample database (~50KB, uses included CSV samples)
-python scripts/companies/update_companies_db.py --use-samples
+## Architecture Notes for Development
 
-# Build full database (~2-3GB download, 30-60 min)
-python scripts/companies/update_companies_db.py
+### Key Implementation Concepts
 
-# Build filtered dataset with LLM classification
-bash scripts/companies/build_filtered_dataset.sh
-```
+1. **Deterministic Source Priority**: When merging data sources, GLEIF > Wikidata > Exchanges priority ensures stable identifiers regardless of load order
 
-### LLM Classification
-```bash
-# Set API key
-export OPENAI_API_KEY=your_key_here
+2. **Two-Level Normalization**:
+   - `canonicalize_name()`: For display/identifiers (preserves case)
+   - `normalize_name()`: For matching (aggressive lowercase)
 
-# Run LLM filter on database
-bash scripts/companies/filter_mining_energy_llm.sh \
-  --input tables/companies/companies_full.parquet \
-  --output tables/companies/companies_metals.parquet \
-  --provider openai \
-  --model gpt-4o-mini
-```
+3. **Blocking Strategy**: First-token prefix + country code filtering reduces candidate set by 99%+ before fuzzy matching
 
-## Key Implementation Details
+4. **Caching Layers**:
+   - `@lru_cache` decorators on normalization functions
+   - LLM classifications persist to `.cache/companies/classifications.json`
+   - Company database loaded once per session
 
-### Data Priority System (entityidentity/companies/companyidentity.py)
+### Code Organization
 
-The package uses deterministic source priority to ensure stable identifiers:
-- GLEIF (priority 1): Official legal names from regulatory filings
-- Wikidata (priority 2): Crowdsourced but well-curated
-- Stock Exchanges (priority 3): Often inconsistent formatting
-
-This prevents identifier drift when the same company appears in multiple sources.
-
-### Normalization Pipeline (entityidentity/companies/companynormalize.py)
-
-Two-level normalization for matching:
-1. `canonicalize_name()`: Preserves readability (e.g., "Apple Inc" not "APPLE INC")
-2. `normalize_name()`: Aggressive normalization for matching (lowercase, remove suffixes)
-
-### Blocking Strategy (entityidentity/companies/companyblocking.py)
-
-Efficient candidate filtering using:
-- Country code matching (if provided)
-- First token prefix matching
-- Reduces millions of companies to ~100 candidates for scoring
-
-### Caching Architecture
-
-Multiple caching layers:
-- `@lru_cache` on normalization functions
-- LLM classifications cached to `.cache/companies/classifications.json`
-- Database loaded once per session into memory
-
-## File Organization
-
-### Core Package Structure
 ```
 entityidentity/
-├── __init__.py                      # Main API exports
-├── companies/
-│   ├── companyidentity.py          # Main resolver and deduplication logic
-│   ├── companynormalize.py         # Name normalization functions
-│   ├── companyblocking.py          # Candidate filtering
-│   ├── companyscoring.py           # Fuzzy matching and scoring
-│   ├── companyresolver.py          # Decision engine
-│   ├── companygleif.py             # GLEIF data loader
-│   ├── companywikidata.py          # Wikidata loader
-│   ├── companyexchanges.py         # Stock exchange loaders
-│   ├── companyfilter.py            # LLM classification
-│   └── company_classifier_config.yaml  # LLM configuration
-├── countries/
-│   ├── fuzzycountry.py              # Country resolution with fuzzy matching
-│   └── countryapi.py                # Country API wrapper
-└── metals/
-    ├── metalidentity.py             # Metal resolution engine
-    ├── metalnormalize.py            # Metal name normalization
-    ├── metalextractor.py            # Extract metals from text
-    └── metalapi.py                  # Public API functions
+├── companies/           # Company resolution modules
+│   ├── companyapi.py   # Public API (imports from companyresolver)
+│   ├── companyresolver.py  # Core resolution logic
+│   ├── companynormalize.py # Name normalization
+│   ├── companyblocking.py  # Candidate filtering
+│   ├── companyscoring.py   # Fuzzy matching
+│   └── companyidentity.py  # Database building & deduplication
+├── countries/          # Country resolution
+└── metals/            # Metal resolution
 ```
 
-### Data Files
-```
-tables/companies/
-├── companies.parquet                # Main database (git ignored, generated)
-├── companies.csv                    # Sample preview (git tracked)
-├── companies_info.txt               # Database statistics (git tracked)
-└── samples/                         # Sample data for testing
-```
+### Common Development Tasks
 
-### Scripts
-```
-scripts/companies/
-├── update_companies_db.py           # Main database builder
-├── build_filtered_dataset.sh        # Complete pipeline with LLM filtering
-├── filter_mining_energy_llm.sh      # LLM classification script
-└── expand_with_exchanges.py         # Add exchange data to existing DB
-```
+#### Adding a New Data Source
+1. Create loader in `entityidentity/companies/company{source}.py`
+2. Add to `build_database_cli.py` with appropriate priority
+3. Update deduplication logic in `companyidentity.py`
 
-## Environment Variables
+#### Modifying Resolution Logic
+- Scoring thresholds: `companyresolver.py` (high_conf_threshold, high_conf_gap)
+- Normalization rules: `companynormalize.py`
+- Blocking strategy: `companyblocking.py`
 
-Required for LLM classification:
-- `OPENAI_API_KEY`: For OpenAI API access
-- `ANTHROPIC_API_KEY`: For Anthropic API access (optional)
-
-Optional:
-- `ENTITYIDENTITY_TEST_LIVE=1`: Enable live API tests
-
-## Performance Characteristics
-
-- **Query latency**: <100ms for most lookups
-- **Database size**: ~10-50MB compressed (Parquet), ~50-200MB in memory
-- **Startup time**: 1-2 seconds to load database
-- **LLM classification**: ~3 companies/second with GPT-4o-mini
-- **Matching accuracy**: >95% for exact names, >85% for variations
-
-## Troubleshooting
-
-### No companies data found
+#### Working with LLM Classification
 ```bash
-python scripts/companies/update_companies_db.py --use-samples
+export OPENAI_API_KEY=your_key
+bash scripts/companies/filter_mining_energy_llm.sh \
+  --input tables/companies/companies_full.parquet \
+  --output tables/companies/companies_metals.parquet
 ```
 
-### LLM classification fails
-```bash
-# Check API key
-echo $OPENAI_API_KEY
+### Performance Considerations
 
-# Clear cache if corrupted
+- Database stays in memory after first `load_companies()` call
+- Blocking is critical - without it, matching would be O(n) for each query
+- RapidFuzz C++ extensions provide 10-100x speedup over pure Python
+
+### Testing Strategy
+
+- Unit tests: Test individual functions (normalization, scoring)
+- Integration tests: Test full resolution pipeline
+- Live tests (ENTITYIDENTITY_TEST_LIVE=1): Test external API integrations
+
+### Troubleshooting
+
+#### No companies data found
+```bash
+python scripts/companies/build_database_cli.py --use-samples
+```
+
+#### Cache corruption
+```bash
 rm -rf .cache/companies/
 ```
 
-### Tests fail with API errors
-```bash
-# Run without live API tests
-pytest -m "not integration"
-```
+#### Memory issues with large datasets
+Consider using filtered datasets or increasing system memory. Full GLEIF database can use 2-3GB RAM.
+
+## Environment Variables
+
+- `OPENAI_API_KEY`: Required for LLM classification
+- `ANTHROPIC_API_KEY`: Alternative LLM provider
+- `ENTITYIDENTITY_TEST_LIVE`: Enable live API tests
+
+## Files to Edit for Common Changes
+
+- **Add new API function**: `entityidentity/companies/companyapi.py` and export in `__all__`
+- **Change matching algorithm**: `entityidentity/companies/companyscoring.py`
+- **Modify data sources**: `scripts/companies/build_database_cli.py`
+- **Adjust confidence thresholds**: `entityidentity/companies/companyresolver.py`

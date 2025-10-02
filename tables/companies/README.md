@@ -27,7 +27,7 @@ Build the full database:
 
 ```bash
 # Full build (30-60 minutes, downloads GLEIF + Wikidata)
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # This creates:
 #   tables/companies/companies_full.parquet  (unfiltered, 100K+ companies)
@@ -69,7 +69,7 @@ For detailed explanation, see [DATA_LOCATIONS.md](../../DATA_LOCATIONS.md)
 
 **Build:**
 ```bash
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 **Use for:**
@@ -122,7 +122,7 @@ See [FILTERING.md](../../entityidentity/companies/FILTERING.md) for filtering st
 
 ```bash
 # 1. Build full database
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 # Downloads: GLEIF (~2GB), Wikidata (streaming), Stock exchanges
 # Time: 30-60 minutes
 # Output: tables/companies/companies_full.parquet
@@ -154,7 +154,7 @@ bash scripts/companies/build_filtered_dataset.sh
 
 ```bash
 # Just rebuild sample data (for package distribution)
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # Time: 5-10 seconds
 # Output: entityidentity/data/companies/companies.parquet
@@ -242,10 +242,10 @@ Rebuild periodically to get latest data:
 
 ```bash
 # Full rebuild (recommended monthly)
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 
 # Quick update (if sources haven't changed much)
-python scripts/companies/update_companies_db.py --skip-download
+python scripts/companies/build_database_cli.py --skip-download
 ```
 
 ### Cleaning Up
@@ -259,7 +259,7 @@ rm -rf .cache/companies/
 
 # Start completely fresh
 rm -rf tables/ .cache/
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 ### Updating Sample Data
@@ -268,7 +268,7 @@ When schema changes, update the package sample:
 
 ```bash
 # Rebuild sample from full database
-python scripts/companies/update_companies_db.py --use-samples
+python scripts/companies/build_database_cli.py --use-samples
 
 # Commit updated sample
 git add entityidentity/data/companies/
@@ -332,7 +332,7 @@ To use this data:
 
 ```bash
 # Run build script
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 ### "Download failed"
@@ -340,10 +340,10 @@ python scripts/companies/update_companies_db.py
 ```bash
 # Check internet connection
 # Try with verbose output
-python scripts/companies/update_companies_db.py -v
+python scripts/companies/build_database_cli.py -v
 
 # Skip problematic source
-python scripts/companies/update_companies_db.py --skip-gleif
+python scripts/companies/build_database_cli.py --skip-gleif
 ```
 
 ### "Database too old"
@@ -351,7 +351,7 @@ python scripts/companies/update_companies_db.py --skip-gleif
 ```bash
 # Full rebuild
 rm tables/companies/companies*.parquet
-python scripts/companies/update_companies_db.py
+python scripts/companies/build_database_cli.py
 ```
 
 ## Related Documentation
