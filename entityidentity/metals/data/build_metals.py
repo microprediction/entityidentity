@@ -16,16 +16,21 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
-import yaml
 
-# Import metal normalization functions from the shared module
 from entityidentity.metals.metalnormalize import (
     normalize_metal_name,
     canonicalize_metal_name,
     slugify_metal_name,
     generate_metal_id,
 )
-from entityidentity.utils.build_utils import expand_aliases, load_yaml_file
+from entityidentity.utils.build_utils import expand_aliases
+from entityidentity.utils.build_framework import (
+    BuildConfig,
+    build_entity_database,
+    validate_duplicate_ids,
+    validate_duplicate_keys,
+    validate_required_fields,
+)
 
 
 def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:
@@ -73,31 +78,53 @@ def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:
     return True
 
 
-# expand_aliases and load_yaml_file are now imported from shared_utils
+def process_metal(metal: dict) -> dict:
+    """Convert a metal YAML entry to a DataFrame row."""
+    name = metal.get('name', '')
+
+    # Generate IDs
+    metal_id = generate_metal_id(name)
+    metal_key = metal.get('metal_key') or slugify_metal_name(name)
+
+    # Create row with all fields as strings
+    row = {
+        'metal_id': metal_id,
+        'metal_key': metal_key,
+        'name': canonicalize_metal_name(name),
+        'name_norm': normalize_metal_name(name),
+        'symbol': str(metal.get('symbol') or ''),
+        'formula': str(metal.get('formula') or ''),
+        'code': str(metal.get('code') or ''),
+        'category_bucket': str(metal.get('category_bucket') or ''),
+        'cluster_id': str(metal.get('cluster_id') or ''),
+        'group_name': str(metal.get('group_name') or ''),
+        'default_unit': str(metal.get('default_unit') or ''),
+        'default_basis': str(metal.get('default_basis') or ''),
+        'hs6': str(metal.get('hs6') or ''),
+        'pra_hint': str(metal.get('pra_hint') or ''),
+        'notes': str(metal.get('notes') or ''),
+        'source_priority': ','.join(metal.get('sources', [])),
+    }
+
+    # Expand aliases
+    row.update(expand_aliases(metal.get('aliases', [])))
+
+    return row
 
 
-def validate_data(df: pd.DataFrame, clusters: dict) -> List[str]:
-    """
-    Validate the data and return list of issues found.
-    """
+def validate_metals(df: pd.DataFrame, clusters: Optional[dict]) -> List[str]:
+    """Validate metal data and return list of issues."""
     issues = []
 
-    # Check for duplicate metal_ids
-    duplicates = df[df.duplicated(subset=['metal_id'], keep=False)]
-    if not duplicates.empty:
-        dup_names = duplicates[['name', 'metal_id']].to_dict('records')
-        issues.append(f"Duplicate metal_ids found: {dup_names}")
-
-    # Check for duplicate metal_keys
-    dup_keys = df[df.duplicated(subset=['metal_key'], keep=False)]
-    if not dup_keys.empty:
-        dup_key_names = dup_keys[['name', 'metal_key']].to_dict('records')
-        issues.append(f"Duplicate metal_keys found: {dup_key_names}")
+    # Check for duplicates
+    issues.extend(validate_duplicate_ids(df, 'metal_id', 'metals'))
+    issues.extend(validate_duplicate_keys(df, 'metal_key', 'metals'))
 
     # Check for missing clusters
     if clusters:
         invalid_clusters = df[
             df['cluster_id'].notna() &
+            (df['cluster_id'] != '') &
             ~df['cluster_id'].isin(clusters.keys())
         ]
         if not invalid_clusters.empty:
@@ -106,119 +133,23 @@ def validate_data(df: pd.DataFrame, clusters: dict) -> List[str]:
 
     # Check unit/basis consistency
     for idx, row in df.iterrows():
-        if pd.notna(row.get('default_unit')) or pd.notna(row.get('default_basis')):
-            if not validate_basis(row.get('default_unit'), row.get('default_basis')):
+        unit = row.get('default_unit')
+        basis = row.get('default_basis')
+        if (unit and unit != '') or (basis and basis != ''):
+            if not validate_basis(unit if unit != '' else None, basis if basis != '' else None):
                 issues.append(
                     f"Unit/basis mismatch for {row['name']}: "
-                    f"unit='{row.get('default_unit')}', basis='{row.get('default_basis')}'"
+                    f"unit='{unit}', basis='{basis}'"
                 )
 
     # Check for missing required fields
-    required_fields = ['name', 'metal_id', 'metal_key', 'category_bucket']
-    for field in required_fields:
-        missing = df[df[field].isna() | (df[field] == "")]
-        if not missing.empty:
-            missing_names = missing['name'].tolist()
-            issues.append(f"Missing {field} for metals: {missing_names}")
+    issues.extend(validate_required_fields(df, ['name', 'metal_id', 'metal_key', 'category_bucket']))
 
     return issues
 
 
-def main():
-    """Main build process."""
-    # Setup paths
-    data_dir = Path(__file__).parent
-    metals_yaml = data_dir / "metals.yaml"
-    clusters_yaml = data_dir / "supply_chain_clusters.yaml"
-    output_parquet = data_dir / "metals.parquet"
-
-    print(f"Building metals database from {metals_yaml}")
-
-    # Load source data
-    print("Loading YAML files...")
-    metals_data = load_yaml_file(metals_yaml)
-
-    # Load clusters if available
-    clusters = {}
-    if clusters_yaml.exists():
-        clusters_data = load_yaml_file(clusters_yaml)
-        clusters = clusters_data.get('clusters', {})
-        print(f"Loaded {len(clusters)} supply chain clusters")
-
-    # Process metals
-    print(f"Processing {len(metals_data.get('metals', []))} metals...")
-    rows = []
-
-    for metal in metals_data.get('metals', []):
-        # Core fields
-        name = metal.get('name', '')
-
-        # Generate IDs
-        metal_id = generate_metal_id(name)
-        metal_key = metal.get('metal_key') or slugify_metal_name(name)
-
-        # Create row with all fields as strings
-        row = {
-            'metal_id': metal_id,
-            'metal_key': metal_key,
-            'name': canonicalize_metal_name(name),
-            'name_norm': normalize_metal_name(name),
-            'symbol': str(metal.get('symbol') or ''),
-            'formula': str(metal.get('formula') or ''),
-            'code': str(metal.get('code') or ''),
-            'category_bucket': str(metal.get('category_bucket') or ''),
-            'cluster_id': str(metal.get('cluster_id') or ''),
-            'group_name': str(metal.get('group_name') or ''),
-            'default_unit': str(metal.get('default_unit') or ''),
-            'default_basis': str(metal.get('default_basis') or ''),
-            'hs6': str(metal.get('hs6') or ''),
-            'pra_hint': str(metal.get('pra_hint') or ''),
-            'notes': str(metal.get('notes') or ''),
-            'source_priority': ','.join(metal.get('sources', [])),
-        }
-
-        # Expand aliases
-        alias_cols = expand_aliases(metal.get('aliases', []))
-        row.update(alias_cols)
-
-        rows.append(row)
-
-    # Create DataFrame with all string dtypes
-    df = pd.DataFrame(rows)
-
-    # Ensure all columns are strings
-    for col in df.columns:
-        df[col] = df[col].astype(str)
-        # Replace 'None' strings with empty strings
-        df[col] = df[col].replace('None', '')
-
-    # Validate data
-    print("\nValidating data...")
-    issues = validate_data(df, clusters)
-
-    if issues:
-        print("\n⚠️  Validation issues found:")
-        for issue in issues:
-            print(f"  - {issue}")
-        print()
-    else:
-        print("✅ All validations passed")
-
-    # Sort by name for consistent output
-    df = df.sort_values('name').reset_index(drop=True)
-
-    # Write to Parquet
-    print(f"\nWriting {len(df)} metals to {output_parquet}")
-    df.to_parquet(output_parquet, index=False, engine='pyarrow')
-
-    # Generate summary report
-    print("\n" + "=" * 60)
-    print("BUILD SUMMARY")
-    print("=" * 60)
-    print(f"Total metals: {len(df)}")
-    print(f"Output file: {output_parquet}")
-    print(f"File size: {output_parquet.stat().st_size / 1024:.1f} KB")
-
+def generate_metal_summary(df: pd.DataFrame, clusters: Optional[dict]) -> None:
+    """Print metal-specific summary statistics."""
     # Category distribution
     print("\nCategory distribution:")
     for category, count in df['category_bucket'].value_counts().items():
@@ -240,12 +171,25 @@ def main():
     with_aliases = df[df['alias1'] != '']
     print(f"Metals with aliases: {len(with_aliases)}")
 
-    if issues:
-        print(f"\n⚠️  Build completed with {len(issues)} validation issues")
-        return 1
-    else:
-        print("\n✅ Build completed successfully")
-        return 0
+
+def main():
+    """Main build process."""
+    data_dir = Path(__file__).parent
+
+    config = BuildConfig(
+        input_yaml=data_dir / "metals.yaml",
+        output_parquet=data_dir / "metals.parquet",
+        aux_yaml=data_dir / "supply_chain_clusters.yaml",
+        process_entity=process_metal,
+        validate_data=validate_metals,
+        generate_summary=generate_metal_summary,
+        entity_name="metal",
+        entity_plural="metals",
+        yaml_key="metals",
+        aux_yaml_key="clusters",
+    )
+
+    return build_entity_database(config)
 
 
 if __name__ == "__main__":
