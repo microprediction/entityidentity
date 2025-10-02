@@ -129,18 +129,16 @@ def _build_candidate_pool(
 
     # Step 1: Filter by detected ticker pattern source
     if ticker_pattern_source and "Source" in candidates.columns:
-        pattern_matches = candidates[
-            candidates["Source"].str.lower() == ticker_pattern_source.lower()
-        ]
-        if not pattern_matches.empty:
+        mask = candidates["Source"].str.lower() == ticker_pattern_source.lower()
+        pattern_matches = candidates.loc[mask]
+        if len(pattern_matches) > 0:
             candidates = pattern_matches
 
     # Step 2: Apply source_hint filter if provided
     elif source_hint and "Source" in candidates.columns:
-        hint_matches = candidates[
-            candidates["Source"].str.lower() == source_hint.lower()
-        ]
-        if not hint_matches.empty:
+        mask = candidates["Source"].str.lower() == source_hint.lower()
+        hint_matches = candidates.loc[mask]
+        if len(hint_matches) > 0:
             candidates = hint_matches
 
     # Step 3: Prefix blocking on ticker_norm
