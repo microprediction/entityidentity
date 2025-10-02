@@ -8,8 +8,8 @@ from typing import List, Optional, Dict, Any, Tuple
 import pandas as pd
 
 from entityidentity.companies.companynormalize import (
-    normalize_company_name as _normalize_company_name,
-    canonicalize_company_name as _canonicalize_company_name,
+    normalize_company_name,
+    canonicalize_company_name,
 )
 from entityidentity.companies.companyresolver import (
     resolve_company,
@@ -55,58 +55,8 @@ def company_identifier(name: str, country: Optional[str] = None) -> Optional[str
 get_identifier = company_identifier
 
 
-def normalize_company_name(name: str) -> str:
-    """Normalize company name for fuzzy matching.
-
-    This function performs aggressive normalization for matching purposes:
-    - Converts to lowercase
-    - Removes legal suffixes (Inc, Corp, Ltd, etc.)
-    - Removes punctuation
-    - Normalizes whitespace
-
-    Args:
-        name: Company name to normalize
-
-    Returns:
-        Normalized string for matching (lowercase, simplified)
-
-    Examples:
-        >>> normalize_company_name("Apple Inc.")
-        'apple'
-        >>> normalize_company_name("AT&T Corporation")
-        'at&t'
-
-    Note:
-        For display/identifier purposes, use canonicalize_company_name() instead.
-    """
-    return _normalize_company_name(name)
-
-
-def canonicalize_company_name(name: str) -> str:
-    """Canonicalize company name for display and identifiers.
-
-    This function preserves readability while making names safe for identifiers:
-    - Preserves case (Apple Inc, not APPLE INC)
-    - Removes problematic punctuation
-    - Normalizes legal suffixes
-    - Converts unicode to ASCII
-
-    Args:
-        name: Company name to canonicalize
-
-    Returns:
-        Canonicalized name safe for identifiers (preserves case)
-
-    Examples:
-        >>> canonicalize_company_name("Apple, Inc.")
-        'Apple Inc'
-        >>> canonicalize_company_name("Société Générale")
-        'Societe Generale'
-
-    Note:
-        For fuzzy matching, use normalize_company_name() instead.
-    """
-    return _canonicalize_company_name(name)
+# normalize_company_name and canonicalize_company_name are imported directly
+# from companynormalize module - no wrapper needed
 
 
 
@@ -184,11 +134,11 @@ def get_company_id(company: Dict[str, Any], safe: bool = False) -> str:
 __all__ = [
     "company_identifier",         # Primary API
     "get_identifier",            # Alias for backwards compatibility
-    "normalize_company_name",    # Primary normalization function
-    "canonicalize_company_name", # Primary canonicalization function
-    "match_company",
-    "resolve_company",
-    "list_companies",
+    "normalize_company_name",    # Direct import from companynormalize
+    "canonicalize_company_name", # Direct import from companynormalize
+    "match_company",             # Direct import from companyresolver
+    "resolve_company",           # Direct import from companyresolver
+    "list_companies",            # Direct import from companyresolver
     "load_companies",            # Direct import from companyresolver
     "extract_companies",
     "get_company_id",

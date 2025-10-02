@@ -33,40 +33,7 @@ def extract_companies_from_text(
 
     # Infer country from text if not provided
     if not country_hint:
-        # List of common country names/adjectives to look for
-        country_terms = [
-            'united states', 'usa', 'america', 'american',
-            'united kingdom', 'uk', 'britain', 'british', 'england',
-            'australia', 'australian',
-            'canada', 'canadian',
-            'germany', 'german',
-            'france', 'french',
-            'japan', 'japanese',
-            'china', 'chinese',
-            'india', 'indian',
-            'brazil', 'brazilian',
-            'south africa', 'south african',
-            'switzerland', 'swiss',
-            'netherlands', 'dutch', 'holland',
-            'sweden', 'swedish',
-            'norway', 'norwegian',
-            'denmark', 'danish',
-            'spain', 'spanish',
-            'italy', 'italian',
-        ]
-
-        text_lower = text.lower()
-        inferred_countries = []
-        for term in country_terms:
-            if term in text_lower:
-                # Use the robust country_identifier to get ISO2 code
-                code = country_identifier(term)
-                if code:
-                    inferred_countries.append(code)
-
-        if inferred_countries:
-            # Use the most common inferred country
-            country_hint = max(set(inferred_countries), key=inferred_countries.count)
+        country_hint = _infer_country_from_text(text)
     
     # Extract candidate company names
     candidates = _extract_candidates(text)
@@ -104,6 +71,56 @@ def extract_companies_from_text(
     results.sort(key=lambda x: text.index(x['mention']))
     
     return results
+
+
+def _infer_country_from_text(text: str) -> Optional[str]:
+    """Infer country context from text using existing country resolution.
+
+    Extracts potential country mentions (capitalized words/phrases) and uses
+    the robust country_identifier() to resolve them. No hardcoded list needed!
+
+    Args:
+        text: Text to analyze for country mentions
+
+    Returns:
+        ISO2 country code if found, None otherwise
+
+    Examples:
+        >>> _infer_country_from_text("Apple in the United States...")
+        'US'
+        >>> _infer_country_from_text("BHP operates in Australia")
+        'AU'
+    """
+    # Extract capitalized word sequences (potential country names)
+    # Match 1-3 word capitalized phrases
+    potential_countries = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}\b', text)
+
+    # Also check for common abbreviations and adjectives
+    # Extract words that might be country-related
+    words = re.findall(r'\b[A-Za-z]+\b', text.lower())
+
+    # Try to identify countries using existing country_identifier
+    # It handles all country names, abbreviations, colloquialisms, and fuzzy matching!
+    inferred_countries = []
+
+    # Check capitalized phrases (e.g., "United States", "South Africa")
+    for phrase in potential_countries:
+        code = country_identifier(phrase)
+        if code:
+            inferred_countries.append(code)
+
+    # Check individual words (e.g., "USA", "American", "Dutch")
+    for word in set(words):  # Use set to avoid duplicates
+        if len(word) >= 2:  # Skip single letters
+            code = country_identifier(word)
+            if code:
+                inferred_countries.append(code)
+
+    if inferred_countries:
+        # Return most common inferred country
+        return max(set(inferred_countries), key=inferred_countries.count)
+
+    return None
 
 
 def _extract_candidates(text: str) -> List[Dict[str, Any]]:

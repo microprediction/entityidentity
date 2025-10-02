@@ -181,81 +181,138 @@ def consolidate_companies(
     return final
 
 
-def _normalize_gleif(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize GLEIF data to standard schema."""
+# Standard output schema for all data sources
+_STANDARD_COLUMNS = [
+    'name', 'name_norm', 'country', 'lei', 'wikidata_qid',
+    'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
+    'address', 'city', 'postal_code', 'source'
+]
+
+
+def _normalize_to_schema(
+    df: pd.DataFrame,
+    *,
+    has_lei: bool = False,
+    has_wikidata_qid: bool = False,
+    has_aliases: bool = False,
+    has_address_fields: bool = False,
+    ticker_to_alias: bool = False,
+) -> pd.DataFrame:
+    """Normalize any data source to standard schema.
+
+    This is the base normalization function used by all data loaders.
+    Handles name canonicalization, column creation, and schema standardization.
+
+    Args:
+        df: Input DataFrame from any source
+        has_lei: Source provides LEI column
+        has_wikidata_qid: Source provides wikidata_qid column
+        has_aliases: Source provides alias columns or aliases list
+        has_address_fields: Source provides address/city/postal_code
+        ticker_to_alias: Copy ticker column to alias1 (for exchanges)
+
+    Returns:
+        DataFrame with standardized schema
+    """
     df = df.copy()
-    # Canonicalize name for safe identifier use
+
+    # Step 1: Canonicalize and normalize company names
     df['name'] = df['name'].apply(canonicalize_company_name)
     df['name_norm'] = df['name'].apply(normalize_company_name)
-    # Flat alias columns (GLEIF doesn't provide aliases)
+
+    # Step 2: Handle LEI column
+    if not has_lei:
+        df['lei'] = None
+
+    # Step 3: Handle Wikidata QID column
+    if not has_wikidata_qid:
+        df['wikidata_qid'] = None
+
+    # Step 4: Handle alias columns
+    if has_aliases:
+        # Check if already has flat alias columns
+        if 'alias1' not in df.columns:
+            # Convert from 'aliases' list column to flat columns
+            def extract_aliases(row):
+                aliases = row.get('aliases', []) if 'aliases' in df.columns else []
+                if not isinstance(aliases, list):
+                    aliases = []
+                return {f'alias{i}': aliases[i-1] if i-1 < len(aliases) else None
+                        for i in range(1, 6)}
+
+            alias_cols = df.apply(extract_aliases, axis=1, result_type='expand')
+            df = pd.concat([df, alias_cols], axis=1)
+    else:
+        # Create empty alias columns
+        if ticker_to_alias and 'ticker' in df.columns:
+            df['alias1'] = df['ticker']
+            for i in range(2, 6):
+                df[f'alias{i}'] = None
+        else:
+            for i in range(1, 6):
+                df[f'alias{i}'] = None
+
+    # Ensure all alias columns exist
     for i in range(1, 6):
-        df[f'alias{i}'] = None
-    df['wikidata_qid'] = None
-    return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid', 
-               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
-               'address', 'city', 'postal_code', 'source']]
+        if f'alias{i}' not in df.columns:
+            df[f'alias{i}'] = None
+
+    # Step 5: Handle address fields
+    if not has_address_fields:
+        df['address'] = None
+        df['city'] = None
+        df['postal_code'] = None
+
+    # Step 6: Return only standard columns in standard order
+    return df[_STANDARD_COLUMNS]
+
+
+def _normalize_gleif(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize GLEIF data to standard schema.
+
+    GLEIF provides: name, country, lei, address fields
+    GLEIF does NOT provide: aliases, wikidata_qid
+    """
+    return _normalize_to_schema(
+        df,
+        has_lei=True,
+        has_wikidata_qid=False,
+        has_aliases=False,
+        has_address_fields=True,
+    )
 
 
 def _normalize_wikidata(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize Wikidata to standard schema."""
-    df = df.copy()
-    # Canonicalize name for safe identifier use
-    df['name'] = df['name'].apply(canonicalize_company_name)
-    df['name_norm'] = df['name'].apply(normalize_company_name)
-    
-    # Convert aliases list to flat columns (alias1, alias2, ..., alias5) if needed
-    # Check if alias columns already exist (e.g., from sample data)
-    has_alias_cols = 'alias1' in df.columns
-    
-    if not has_alias_cols:
-        # Extract from 'aliases' list column
-        def extract_aliases(row):
-            aliases = row.get('aliases', []) if 'aliases' in df.columns else []
-            if not isinstance(aliases, list):
-                aliases = []
-            result = {}
-            for i in range(1, 6):
-                result[f'alias{i}'] = aliases[i-1] if i-1 < len(aliases) else None
-            return pd.Series(result)
-        
-        alias_cols = df.apply(extract_aliases, axis=1)
-        df = pd.concat([df, alias_cols], axis=1)
-    else:
-        # Ensure all alias1-alias5 columns exist
-        for i in range(1, 6):
-            col = f'alias{i}'
-            if col not in df.columns:
-                df[col] = None
-    
-    df['address'] = None
-    df['city'] = None
-    df['postal_code'] = None
-    return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid',
-               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
-               'address', 'city', 'postal_code', 'source']]
+    """Normalize Wikidata to standard schema.
+
+    Wikidata provides: name, country, lei (sometimes), wikidata_qid, aliases
+    Wikidata does NOT provide: address fields
+    """
+    return _normalize_to_schema(
+        df,
+        has_lei=True,  # Sometimes present
+        has_wikidata_qid=True,
+        has_aliases=True,
+        has_address_fields=False,
+    )
 
 
 def _normalize_exchange(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize stock exchange data to standard schema."""
-    df = df.copy()
-    # Canonicalize name for safe identifier use
-    df['name'] = df['name'].apply(canonicalize_company_name)
-    df['name_norm'] = df['name'].apply(normalize_company_name)
-    df['lei'] = None
-    df['wikidata_qid'] = None
-    
-    # Use ticker as alias1 if available
-    df['alias1'] = df['ticker'] if 'ticker' in df.columns else None
-    for i in range(2, 6):
-        df[f'alias{i}'] = None
-    
-    df['address'] = None
-    df['city'] = None
-    df['postal_code'] = None
-    
-    return df[['name', 'name_norm', 'country', 'lei', 'wikidata_qid',
-               'alias1', 'alias2', 'alias3', 'alias4', 'alias5',
-               'address', 'city', 'postal_code', 'source']]
+    """Normalize stock exchange data to standard schema.
+
+    Exchanges provide: name, country, ticker
+    Exchanges do NOT provide: lei, wikidata_qid, address fields
+
+    Ticker is mapped to alias1 for matching purposes.
+    """
+    return _normalize_to_schema(
+        df,
+        has_lei=False,
+        has_wikidata_qid=False,
+        has_aliases=False,
+        has_address_fields=False,
+        ticker_to_alias=True,
+    )
 
 
 def main():

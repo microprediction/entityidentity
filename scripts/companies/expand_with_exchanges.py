@@ -30,64 +30,19 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from entityidentity.companies.companyfilter import filter_companies_llm
-from entityidentity.companies.companyexchanges import load_asx, load_lse, load_tsx
+from entityidentity.companies.companyexchanges_utils import load_all_exchanges
 
 
 def load_exchange_data():
-    """Load data from all available exchanges."""
-    print("=" * 70)
-    print("Loading Exchange Data")
-    print("=" * 70)
-    
-    exchanges_data = []
-    
-    # ASX (Australia)
-    print("\n📊 ASX (Australian Securities Exchange)...")
-    try:
-        asx_df = load_asx()
-        print(f"   Loaded: {len(asx_df)} companies")
-        exchanges_data.append(asx_df)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-        print(f"   Using sample data instead")
-        from entityidentity.companies.companyexchanges import sample_asx_data
-        asx_df = sample_asx_data()
-        exchanges_data.append(asx_df)
-    
-    # LSE (London)
-    print("\n📊 LSE (London Stock Exchange)...")
-    try:
-        lse_df = load_lse()
-        print(f"   Loaded: {len(lse_df)} companies")
-        exchanges_data.append(lse_df)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-        print(f"   Using sample data instead")
-        from entityidentity.companies.companyexchanges import sample_lse_data
-        lse_df = sample_lse_data()
-        exchanges_data.append(lse_df)
-    
-    # TSX (Toronto)
-    print("\n📊 TSX (Toronto Stock Exchange)...")
-    try:
-        tsx_df = load_tsx()
-        print(f"   Loaded: {len(tsx_df)} companies")
-        exchanges_data.append(tsx_df)
-    except Exception as e:
-        print(f"   ⚠️  Error: {e}")
-        print(f"   Using sample data instead")
-        from entityidentity.companies.companyexchanges import sample_tsx_data
-        tsx_df = sample_tsx_data()
-        exchanges_data.append(tsx_df)
-    
-    # Combine all exchange data
-    if exchanges_data:
-        combined = pd.concat(exchanges_data, ignore_index=True)
-        print(f"\n✅ Total companies from exchanges: {len(combined)}")
-        return combined
+    """Load data from all available exchanges using shared utility."""
+    combined, stats = load_all_exchanges(use_samples_on_error=True, verbose=True)
+
+    if not combined.empty:
+        print(f"\n✅ Total companies from exchanges: {len(combined):,}")
     else:
         print("\n❌ No exchange data loaded!")
-        return pd.DataFrame()
+
+    return combined
 
 
 def deduplicate_against_existing(exchange_df, existing_df):
