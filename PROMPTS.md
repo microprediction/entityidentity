@@ -8,22 +8,24 @@ This file contains a series of prompts to guide Claude Code through implementing
 
 ## STATUS UPDATE (2025-10-02)
 
-**Phase 1 Progress**: 3 of 3 modules completed (100%) ✅
+**Overall Progress**: Phase 1 & 2 Mostly Complete (5 of 6 modules) ✅
 
-| Prompt | Module | Status | Notes |
-|--------|--------|--------|-------|
-| 1A-1B | Baskets | ✅ COMPLETED | 74 tests passing, README complete |
-| 1C-1D | Period | ✅ COMPLETED | 52 tests passing (90% coverage), APIs exported |
-| 1E | Places | ✅ COMPLETED | 52 of 55 tests passing, APIs exported, data built |
-
-**Phase 1 Complete! ✅ Moving to Phase 2**
+| Phase | Module | Status | Tests | Notes |
+|-------|--------|--------|-------|-------|
+| **Phase 1** | | | | |
+| 1A-1B | Baskets | ✅ COMPLETED | 74 passing | README complete, APIs exported |
+| 1C-1D | Period | ✅ COMPLETED | 52 passing (90% cov) | APIs exported |
+| 1E | Places | ✅ COMPLETED | 52 of 55 passing | APIs exported, data built |
+| **Phase 2** | | | | |
+| 2A-2B | Units | ✅ COMPLETED | 23 passing | README complete, APIs exported |
+| 2C-2E | Instruments | ❌ NOT STARTED | - | **Next priority** |
 
 **Immediate Actions**:
-1. ✅ ~~Baskets Module~~ - DONE (74 tests)
-2. ✅ ~~Period Module~~ - DONE (52 tests, 90% coverage)
-3. ✅ ~~Places Module~~ - DONE (52 of 55 tests passing)
-4. ⏭️ **NEXT**: Execute Prompt 2A-2B (Units Module + Tests)
-5. ⏭️ **THEN**: Execute Prompt 2C-2E (Instruments Module + Tests)
+1. ✅ ~~Phase 1 Complete~~ - All foundation modules done (baskets, period, places)
+2. ✅ ~~Units Module~~ - DONE (23 tests, APIs exported)
+3. ⏭️ **NEXT**: Execute Prompt 2C-2E (Instruments Module + Tests)
+4. ⏭️ **THEN**: Execute Prompt 3A-3B (Facilities Module - optional)
+5. ⏭️ **FINALLY**: Execute Phase 4 (Integration & Documentation)
 
 See [REPO_STATUS.md](REPO_STATUS.md) for detailed analysis.
 
@@ -261,7 +263,7 @@ Success Criteria:
 
 ## Phase 2: Conversion & Ground Truth
 
-### Prompt 2A: Units Module - Implementation ⏭️ TODO
+### Prompt 2A: Units Module - Implementation ✅ COMPLETED
 
 ```
 Implement the units module following IMPLEMENTATION_PLAN.md section B.4 (Units API).
@@ -298,7 +300,9 @@ Show me the complete implementation with conversion formulas clearly documented.
 
 ---
 
-### Prompt 2B: Units Module - Tests
+### Prompt 2B: Units Module - Tests ✅ COMPLETED
+
+**Status**: 23 tests implemented and passing.
 
 ```
 Implement comprehensive tests for the units module in tests/test_units.py.
@@ -336,7 +340,7 @@ Run pytest and show coverage.
 
 ---
 
-### Prompt 2C: Instruments Module - Data Loading
+### Prompt 2C: Instruments Module - Data Loading ⏭️ NEXT PRIORITY
 
 ```
 Implement the instruments data loader following IMPLEMENTATION_PLAN.md section B.6 (Instruments API).

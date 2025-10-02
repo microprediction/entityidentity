@@ -1,0 +1,11 @@
+Source,asset_id,Name,currency,unit,Metal
+Fastmarkets,MB-CO-0005,Cobalt standard grade in-whs Rotterdam,USD,USD/lb,Cobalt
+Fastmarkets,MB-LI-0029,Lithium carbonate 99.5% Li2CO3 min battery grade spot prices cif China Japan & Korea,USD,USD/kg,Lithium
+LME,LME_AL_CASH,LME Aluminium Cash,USD,USD/t,Aluminium
+LME,LME_CU_CASH,LME Copper Cash,USD,USD/t,Copper
+Fastmarkets,MB-W-0003,APT 88.5% WO3 min cif Rotterdam and Baltimore,USD,USD/mtu,Tungsten
+Bloomberg,LMCADY,LME Copper Cash Settlement,USD,USD/t,Copper
+CME,HG,Copper Futures,USD,cents/lb,Copper
+Argus,PA0026990,Lithium hydroxide monohydrate 56.5% min battery grade cfr north Asia,USD,USD/kg,Lithium
+Fastmarkets,MB-NI-0001,Nickel cathode premium in-whs Rotterdam,USD,USD/t,Nickel
+Fastmarkets,MB-FEC-0001,Ferro-chrome 0.10% C average 65-70% Cr 2015 basis Europe,USD,cents/lb,Chrome
