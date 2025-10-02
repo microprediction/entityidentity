@@ -192,8 +192,6 @@ def list_companies(
 
 
 __all__ = [
-    "LEGAL_RE",
-    "normalize_name",
     "load_companies",
     "resolve_company",
     "match_company",

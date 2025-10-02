@@ -12,9 +12,9 @@ from entityidentity.companies.companynormalize import (
     canonicalize_company_name as _canonicalize_company_name,
 )
 from entityidentity.companies.companyresolver import (
-    resolve_company as _resolve_company,
-    load_companies as _load_companies,
-    list_companies as _list_companies,
+    resolve_company,
+    load_companies,
+    list_companies,
 )
 
 
@@ -42,7 +42,7 @@ def company_identifier(name: str, country: Optional[str] = None) -> Optional[str
         >>> company_identifier("Anglo American")
         'Anglo American plc:GB'
     """
-    result = _resolve_company(name, country=country)
+    result = resolve_company(name, country=country)
     final = result.get("final")
     
     if final:
@@ -141,30 +141,12 @@ def match_company(name: str, country: Optional[str] = None) -> Optional[Dict[str
     Returns:
         Company dict with name, country, lei, etc. or None if no confident match
     """
-    result = _resolve_company(name, country=country)
+    result = resolve_company(name, country=country)
     return result.get("final")
 
 
-def resolve_company(name: str, country: Optional[str] = None) -> Dict[str, Any]:
-    """Resolve company with full details and match scores.
-    
-    Args:
-        name: Company name to resolve
-        country: Optional country code hint
-        
-    Returns:
-        Dict with 'final' (best match), 'decision' (how matched), 'matches' (all candidates)
-    """
-    return _resolve_company(name, country=country)
 
 
-def list_companies(
-    country: Optional[str] = None,
-    search: Optional[str] = None,
-    limit: Optional[int] = None,
-) -> pd.DataFrame:
-    """List companies with optional filtering (delegates to companyresolver)."""
-    return _list_companies(country=country, search=search, limit=limit)
 
 
 def extract_companies(
