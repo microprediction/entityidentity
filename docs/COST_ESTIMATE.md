@@ -86,12 +86,13 @@
 ### 5. Hybrid Approach (Recommended)
 ```bash
 # Step 1: Quick keyword filter (free, instant)
-python scripts/companies/filter_mining_energy.py \
+python -m entityidentity.companies.companyfilter \
   --input full_data.parquet \
-  --output potential_matches.parquet
+  --output potential_matches.parquet \
+  --strategy keyword
 
 # Step 2: LLM classification on smaller set
-python scripts/companies/filter_mining_energy_llm.sh \
+python -m entityidentity.companies.companyfilter \
   --input potential_matches.parquet \
   --output final_matches.parquet \
   --provider openai

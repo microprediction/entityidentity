@@ -1,8 +1,17 @@
 #!/bin/bash
 # Wrapper script for LLM-based company filtering
 #
-# This script provides a convenient shell interface to the companyfilter module,
-# with additional features like info file generation and CSV preview creation.
+# This script wraps entityidentity.companies.companyfilter with additional
+# convenience features like CSV preview and info file generation.
+#
+# NOTE: For direct API access, use the Python module:
+#   python -m entityidentity.companies.companyfilter --strategy llm --input ... --output ...
+#
+# This script adds:
+#   - Automatic cache file configuration
+#   - CSV preview generation (first 500 rows)
+#   - Info file generation with statistics
+#   - Colorized output
 #
 # Usage:
 #   ./filter_mining_energy_llm.sh --input companies.parquet --output filtered.parquet
@@ -55,6 +64,7 @@ OUTPUT=${OUTPUT:-"tables/companies/companies.parquet"}
 ARGS=()
 ARGS+=("--input" "$INPUT")
 ARGS+=("--output" "$OUTPUT")
+ARGS+=("--strategy" "llm")  # Explicitly use LLM strategy
 ARGS+=("--provider" "$PROVIDER")
 [[ -n "$MODEL" ]] && ARGS+=("--model" "$MODEL")
 

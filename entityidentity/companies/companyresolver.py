@@ -22,9 +22,25 @@ from entityidentity.companies.companyscoring import score_candidates
 def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
     """Load companies snapshot into memory with caching.
 
-    Ensures name_norm and alias columns exist.
+    Data Loading Priority:
+    1. Explicit path (if data_path provided)
+    2. Package data: entityidentity/data/companies/ (~500 sample companies)
+    3. Development data: tables/companies/ (full database, if built)
+
+    Args:
+        data_path: Optional path to companies database. If None, searches standard locations.
+
+    Returns:
+        DataFrame with company data
+
+    Raises:
+        FileNotFoundError: If no companies data found in any location
+
+    See Also:
+        DATA_LOCATIONS.md for detailed explanation of data directories
     """
     if data_path is None:
+        # Priority 1: Package data (distributed with pip, always available)
         pkg_dir = Path(__file__).parent.parent
         data_dir = pkg_dir / "data" / "companies"
         for candidate in ["companies.parquet", "companies.csv"]:
@@ -32,6 +48,8 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
             if p.exists():
                 data_path = str(p)
                 break
+
+        # Priority 2: Development data (built locally, comprehensive)
         if data_path is None:
             tables_dir = pkg_dir.parent / "tables" / "companies"
             for candidate in ["companies.parquet", "companies.csv"]:
@@ -39,9 +57,20 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
                 if p.exists():
                     data_path = str(p)
                     break
+
+        # Not found in any location
         if data_path is None:
             raise FileNotFoundError(
-                "No companies data found. Run build script to generate dataset."
+                "No companies data found in standard locations.\n\n"
+                "Searched:\n"
+                f"  1. Package data: {data_dir}\n"
+                f"  2. Development data: {tables_dir}\n\n"
+                "To fix:\n"
+                "  • For sample data (~500 companies):\n"
+                "      python scripts/companies/update_companies_db.py --use-samples\n\n"
+                "  • For full database (100K+ companies, 30-60 min):\n"
+                "      python scripts/companies/update_companies_db.py\n\n"
+                "See DATA_LOCATIONS.md for details on data organization."
             )
 
     path = Path(data_path)

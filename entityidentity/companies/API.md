@@ -46,9 +46,10 @@ EntityIdentity uses a three-layer architecture for company resolution:
 └─────────────────────────────────────────────────────┘
 ```
 
-### Legacy Module (Deprecated)
+### Legacy Modules (Removed)
 
-- **companyidentity.py**: Deprecated compatibility layer. Still works but will be removed in future versions. Migrate to `companyapi.py`.
+- **companyidentity.py**: Removed in v0.1.0. Use `companyapi.py` instead.
+- **filter_mining_energy.py**: Removed. Use `companyfilter.py` instead.
 
 ## Public API Functions
 
@@ -413,7 +414,7 @@ result = resolve_company(
 
 ## Migration Guide
 
-### From `companyidentity.py` (deprecated)
+### From `companyidentity.py` (removed)
 
 **Old:**
 ```python

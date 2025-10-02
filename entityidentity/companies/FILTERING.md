@@ -223,48 +223,54 @@ python -m entityidentity.companies.companyfilter \
 python -m entityidentity.companies.companyfilter \
     --input companies_full.parquet \
     --output companies_metals.parquet \
+    --strategy llm \
     --provider anthropic \
     --model claude-3-haiku-20240307 \
     --cache-file .cache/classifications.json \
     --confidence-threshold 0.8
 
 # Keyword-only filtering
-python scripts/companies/filter_mining_energy.py \
+python -m entityidentity.companies.companyfilter \
     --input companies_full.parquet \
-    --output companies_metals.parquet
+    --output companies_metals.parquet \
+    --strategy keyword
 ```
 
 ## Migration from Old Scripts
 
 If you were using the standalone scripts:
 
-**Old:** `scripts/companies/filter_mining_energy.py` (keyword-based)
-```python
-# Deprecated approach
-from scripts.companies.filter_mining_energy import filter_database
-filtered = filter_database(input_path, output_path)
+**Old Approach:** Standalone scripts (removed)
+```bash
+# ❌ REMOVED: scripts/companies/filter_mining_energy.py
+# ❌ REMOVED: scripts/companies/filter_mining_energy_llm.sh
 ```
 
-**New:** Use unified API
+**New Approach:** Use unified API
 ```python
+# Python API (recommended)
 from entityidentity.companies.companyfilter import filter_companies
-df = pd.read_parquet(input_path)
+import pandas as pd
+
+df = pd.read_parquet('companies_full.parquet')
 filtered = filter_companies(df, strategy='keyword')
-filtered.to_parquet(output_path)
+filtered.to_parquet('companies.parquet')
 ```
 
-**Old:** `scripts/companies/filter_mining_energy_llm.sh` (LLM script)
+**Or use CLI:**
 ```bash
-# Deprecated
-bash scripts/companies/filter_mining_energy_llm.sh
-```
-
-**New:** Use Python API or CLI
-```bash
+# Keyword filtering
 python -m entityidentity.companies.companyfilter \
-    --input companies.parquet \
-    --output filtered.parquet \
-    --strategy hybrid
+    --input companies_full.parquet \
+    --output companies.parquet \
+    --strategy keyword
+
+# Hybrid filtering
+python -m entityidentity.companies.companyfilter \
+    --input companies_full.parquet \
+    --output companies.parquet \
+    --strategy hybrid \
+    --provider openai
 ```
 
 ## Performance Tips

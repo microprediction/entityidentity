@@ -1,8 +1,8 @@
 """Tests for company name resolution"""
 
 import pytest
-from entityidentity.companies.companyidentity import (
-    normalize_name,
+from entityidentity.companies.companynormalize import (
+    normalize_company_name as normalize_name,  # Use alias for test compatibility
     LEGAL_RE,
 )
 
@@ -77,7 +77,7 @@ class TestCompanyResolution:
     
     def test_resolve_with_data(self):
         """Test that resolve works when data is available"""
-        from entityidentity.companies.companyidentity import resolve_company
+        from entityidentity.companies.companyresolver import resolve_company
         
         # This should work if companies.parquet exists
         try:
@@ -90,7 +90,7 @@ class TestCompanyResolution:
     
     def test_match_with_data(self):
         """Test that match works when data is available"""
-        from entityidentity.companies.companyidentity import match_company
+        from entityidentity.companies.companyresolver import match_company
         
         # This should work if companies.parquet exists
         try:
@@ -102,7 +102,7 @@ class TestCompanyResolution:
     
     def test_resolve_with_explicit_path(self):
         """Test that resolve works with explicit data path"""
-        from entityidentity.companies.companyidentity import resolve_company
+        from entityidentity.companies.companyresolver import resolve_company
         
         # Should fail with non-existent path
         with pytest.raises(FileNotFoundError):

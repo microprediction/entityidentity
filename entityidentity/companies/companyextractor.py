@@ -3,7 +3,7 @@
 import re
 from typing import List, Optional, Dict, Any
 
-from entityidentity.companies.companyidentity import resolve_company, load_companies
+from entityidentity.companies.companyresolver import resolve_company, load_companies
 from entityidentity.countries import country_identifier
 
 
