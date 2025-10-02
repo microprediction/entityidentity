@@ -1,169 +1,64 @@
 # Unit Normalization Configuration
 #
 # Defines canonical units and conversion rules for metals/materials.
-# Each material has a canonical unit/basis and required parameters for conversion.
 
-# ============================================================================
 # Ferro-Alloys
-# ============================================================================
-
 FeCr:
   canonical_unit: "USD/lb"
   canonical_basis: "Cr contained"
   requires:
-    - "Cr_pct"        # Chromium percentage in alloy (e.g., 65.0 for 65%)
-    - "ton_system"    # "metric" | "short" | "long"
-  conversion_note: |
-    Convert $/t alloy ’ $/lb Cr contained
-    Formula: ($/t alloy) / (Cr% / 100) / (lbs per ton)
-    - Metric ton: 2204.62 lbs
-    - Short ton: 2000 lbs
-    - Long ton: 2240 lbs
+    - "Cr_pct"
+    - "ton_system"
+  conversion_note: "Convert $/t alloy to $/lb Cr contained"
   source: "Fastmarkets FeCr specifications"
-  source_url: "https://www.fastmarkets.com/commodities/ferro-alloys"
-
-FeMn:
-  canonical_unit: "USD/lb"
-  canonical_basis: "Mn contained"
-  requires:
-    - "Mn_pct"        # Manganese percentage
-    - "ton_system"
-  conversion_note: "Same conversion as FeCr but for Mn content"
-  source: "Fastmarkets FeMn specifications"
-
-FeSi:
-  canonical_unit: "USD/lb"
-  canonical_basis: "Si contained"
-  requires:
-    - "Si_pct"        # Silicon percentage
-    - "ton_system"
-  conversion_note: "Same conversion as FeCr but for Si content"
-  source: "Fastmarkets FeSi specifications"
-
-# ============================================================================
-# Tungsten Products
-# ============================================================================
 
 APT:
   canonical_unit: "USD/mtu WO3"
   canonical_basis: "WO3 basis"
   requires:
-    - "WO3_pct"       # WO3 percentage in APT (typically 88.5%)
-  conversion_note: |
-    Convert $/t APT ’ $/mtu WO3
-    Formula: ($/t APT) * (WO3% / 100) / 10
-    MTU (metric ton unit) = 10 kg = 1% of metric ton
-    For 88.5% APT at $450/t: $450 * 0.885 / 10 = $39.825/mtu WO3
+    - "WO3_pct"
+  conversion_note: "Convert $/t APT to $/mtu WO3"
   source: "Fastmarkets APT specifications"
-  source_url: "https://www.fastmarkets.com/commodities/minor-metals"
 
-# ============================================================================
-# Base Metals (Simple conversions)
-# ============================================================================
-
+# Base Metals
 Copper:
   canonical_unit: "USD/lb"
   canonical_basis: "Cu contained"
-  requires: []        # Pure metal, simple mass conversion
-  conversion_note: |
-    Convert between mass units for pure copper:
-    - $/t ’ $/lb: divide by lbs per ton
-    - $/kg ’ $/lb: divide by 2.20462
-    No grade adjustment needed for pure metal
-  source: "LME/COMEX copper specifications"
+  requires: []
+  conversion_note: "Pure metal, simple mass conversion"
 
 Aluminum:
   canonical_unit: "USD/lb"
   canonical_basis: "Al contained"
   requires: []
-  conversion_note: "Pure metal, simple mass conversion"
-  source: "LME aluminum specifications"
 
 Nickel:
   canonical_unit: "USD/lb"
   canonical_basis: "Ni contained"
   requires: []
-  conversion_note: "Pure metal, simple mass conversion"
-  source: "LME nickel specifications"
 
-Zinc:
-  canonical_unit: "USD/lb"
-  canonical_basis: "Zn contained"
-  requires: []
-  conversion_note: "Pure metal, simple mass conversion"
-  source: "LME zinc specifications"
-
-Lead:
-  canonical_unit: "USD/lb"
-  canonical_basis: "Pb contained"
-  requires: []
-  conversion_note: "Pure metal, simple mass conversion"
-  source: "LME lead specifications"
-
-Tin:
-  canonical_unit: "USD/lb"
-  canonical_basis: "Sn contained"
-  requires: []
-  conversion_note: "Pure metal, simple mass conversion"
-  source: "LME tin specifications"
-
-# ============================================================================
 # Precious Metals
-# ============================================================================
-
 Gold:
   canonical_unit: "USD/oz"
   canonical_basis: "Au contained"
   requires: []
-  conversion_note: |
-    Troy ounce conversions:
-    - 1 troy oz = 31.1035 grams
-    - 1 kg = 32.1507 troy oz
-    - $/kg ’ $/oz: divide by 32.1507
-  source: "COMEX gold specifications"
 
 Silver:
   canonical_unit: "USD/oz"
   canonical_basis: "Ag contained"
   requires: []
-  conversion_note: "Troy ounce for precious metals"
-  source: "COMEX silver specifications"
 
 Platinum:
   canonical_unit: "USD/oz"
   canonical_basis: "Pt contained"
   requires: []
-  conversion_note: "Troy ounce for PGMs"
-  source: "NYMEX platinum specifications"
 
-Palladium:
-  canonical_unit: "USD/oz"
-  canonical_basis: "Pd contained"
-  requires: []
-  conversion_note: "Troy ounce for PGMs"
-  source: "NYMEX palladium specifications"
-
-Rhodium:
-  canonical_unit: "USD/oz"
-  canonical_basis: "Rh contained"
-  requires: []
-  conversion_note: "Troy ounce for PGMs"
-  source: "Johnson Matthey rhodium specifications"
-
-# ============================================================================
-# Conversion Constants (for reference)
-# ============================================================================
-
+# Conversion Constants
 conversion_constants:
-  # Mass conversions
   metric_ton_to_lbs: 2204.62
   short_ton_to_lbs: 2000.0
   long_ton_to_lbs: 2240.0
   kg_to_lbs: 2.20462
-
-  # Troy ounce conversions
   troy_oz_per_kg: 32.1507
   grams_per_troy_oz: 31.1035
-
-  # MTU (metric ton unit) conversions
-  mtu_per_metric_ton: 10.0    # 1 MTU = 100 kg = 10% of metric ton
+  mtu_per_metric_ton: 10.0

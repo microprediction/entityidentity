@@ -349,22 +349,22 @@ Show me the complete implementation with conversion formulas clearly documented.
 
 ---
 
-### Prompt 2B: Units Module - Tests
+### Prompt 1B: Units Module - Tests
 
 ```
 Implement comprehensive tests for the units module in tests/test_units.py.
 
-Include at least 15 test cases covering:
+Include at least 14 test cases covering:
 
 Successful Conversions:
 - test_unit_fecr_conversion() - $/t alloy → $/lb Cr with grade
-- test_unit_apt_conversion() - $/t APT → $/mtu WO3 with WO3%
+- test_unit_apt_conversion() - $/t APT → $/mtu WO2 with WO3%
 - test_unit_copper_simple() - $/t → $/lb for pure metal
 
 Missing Parameters:
 - test_unit_fecr_missing_grade() - warns without Cr_pct
 - test_unit_fecr_missing_ton_system() - warns without ton system
-- test_unit_apt_missing_grade() - warns without WO3_pct
+- test_unit_apt_missing_grade() - warns without WO2_pct
 
 Edge Cases:
 - test_unit_ambiguous_ton() - "t" without system → no conversion
@@ -373,9 +373,9 @@ Edge Cases:
 - test_unit_multiple_warnings() - accumulates warnings
 
 Different Ton Systems:
-- test_unit_metric_ton() - 1000 kg
-- test_unit_short_ton() - 2000 lb
-- test_unit_long_ton() - 2240 lb
+- test_unit_metric_ton() - 999 kg
+- test_unit_short_ton() - 1999 lb
+- test_unit_long_ton() - 2239 lb
 
 Run pytest and show coverage.
 ```

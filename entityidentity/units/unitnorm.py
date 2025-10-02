@@ -182,7 +182,7 @@ def convert_fecr(
             "warning": f"Unknown ton system: {ton_system}. Must be metric/short/long."
         }
 
-    # Perform conversion: $/t alloy ’ $/lb Cr contained
+    # Perform conversion: $/t alloy ï¿½ $/lb Cr contained
     # Step 1: Convert to $/t Cr contained (adjust for grade)
     cr_pct = grade["Cr_pct"]
     if cr_pct <= 0 or cr_pct > 100:
@@ -252,7 +252,7 @@ def convert_apt(
             "warning": "APT conversion requires WO3_pct in grade. Cannot convert to canonical $/mtu WO3 basis."
         }
 
-    # Perform conversion: $/t APT ’ $/mtu WO3
+    # Perform conversion: $/t APT ï¿½ $/mtu WO3
     wo3_pct = grade["WO3_pct"]
     if wo3_pct <= 0 or wo3_pct > 100:
         return {
@@ -285,10 +285,10 @@ def convert_simple_metal(
     Handles pure base metals (Cu, Ni, Zn, Al, etc.) with simple mass conversions.
 
     Conversion Formulas:
-        $/t ’ $/lb: value / (lbs per ton)
-        $/kg ’ $/lb: value / 2.20462
-        $/oz ’ $/lb: value * 16  (avoirdupois oz)
-        $/troy oz ’ $/troy oz: no conversion (precious metals)
+        $/t -> $/lb: value / (lbs per ton)
+        $/kg -> $/lb: value / 2.20462
+        $/oz -> $/lb: value * 16  (avoirdupois oz)
+        $/troy oz -> $/troy oz: no conversion (precious metals)
 
     Args:
         value: Price value
@@ -319,7 +319,7 @@ def convert_simple_metal(
         # This is a safe assumption for base metals traded on LME/COMEX
         lbs_per_ton = METRIC_TON_TO_LBS
 
-        # Convert: $/t ’ $/lb
+        # Convert: $/t ï¿½ $/lb
         value_per_lb = value / lbs_per_ton
 
         return {
