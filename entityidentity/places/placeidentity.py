@@ -110,7 +110,13 @@ def _score_place(row: pd.Series, query_norm: str) -> int:
         Best score (0-100) from name or aliases
     """
     # Use admin1_norm instead of name_norm for places
-    return score_candidate(row, query_norm, name_field='admin1_norm', get_aliases_fn=_get_aliases)
+    return score_candidate(
+        row,
+        query_norm,
+        normalize_fn=normalize_place_name,
+        name_column='admin1_norm',
+        max_aliases=10
+    )
 
 
 # ---- Main resolution function ----

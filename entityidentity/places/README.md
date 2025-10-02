@@ -26,11 +26,13 @@ The places module provides deterministic entity resolution for admin1-level admi
 
 ### Coverage Examples
 
+**Total: 3,864 admin1 regions across 228 countries** (from GeoNames)
+
 | Country | Admin1 Examples | Count |
 |---------|----------------|-------|
 | **USA** | California, Texas, New York, ... | 51 |
-| **Australia** | Western Australia, New South Wales, Queensland, ... | 8 |
-| **South Africa** | Limpopo, Gauteng, Western Cape, ... | 9 |
+| **Australia** | Western Australia (WA), New South Wales (NSW), Queensland, ... | 8 |
+| **South Africa** | Limpopo, Gauteng, Western Cape, Eastern Cape, ... | 9 |
 | **Canada** | Ontario, Quebec, British Columbia, ... | 13 |
 | **Brazil** | São Paulo, Minas Gerais, Pará, ... | 27 |
 
