@@ -221,13 +221,4 @@ __all__ = [
     "canonicalize_metal_name",
     "slugify_metal_name",
     "generate_metal_id",
-    # Backwards compatibility aliases
-    "normalize_name",
-    "canonicalize_name",
-    "slugify",
 ]
-
-# Backwards compatibility aliases
-normalize_name = normalize_metal_name
-canonicalize_name = canonicalize_metal_name
-slugify = slugify_metal_name

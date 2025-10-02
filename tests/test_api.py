@@ -196,15 +196,15 @@ class TestAPIIntegration:
             country_identifiers,
             get_identifier,
             list_companies,
-            normalize_name,
+            normalize_company_name,
         )
-        
+
         assert callable(company_identifier)
         assert callable(country_identifier)
         assert callable(country_identifiers)
         assert callable(get_identifier)
         assert callable(list_companies)
-        assert callable(normalize_name)
+        assert callable(normalize_company_name)
     
     def test_company_and_country_work_together(self):
         """Test that both APIs work together"""

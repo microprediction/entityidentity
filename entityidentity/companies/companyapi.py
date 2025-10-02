@@ -15,6 +15,7 @@ from entityidentity.companies.companyresolver import (
     resolve_company,
     load_companies,
     list_companies,
+    match_company,
 )
 
 
@@ -108,43 +109,6 @@ def canonicalize_company_name(name: str) -> str:
     return _canonicalize_company_name(name)
 
 
-# Deprecated alias - kept for backwards compatibility
-def normalize_name(name: str) -> str:
-    """Normalize company name for matching.
-
-    DEPRECATED: Use normalize_company_name() instead.
-    This alias will be removed in v1.0.0.
-
-    Args:
-        name: Company name to normalize
-
-    Returns:
-        Normalized string (lowercase, no punctuation, legal suffixes removed)
-    """
-    import warnings
-    warnings.warn(
-        "normalize_name() is deprecated and will be removed in v1.0.0. "
-        "Use normalize_company_name() instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    return _normalize_company_name(name)
-
-
-def match_company(name: str, country: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Find best matching company or None.
-    
-    Args:
-        name: Company name to match
-        country: Optional country code (e.g., "US", "GB") - improves accuracy
-        
-    Returns:
-        Company dict with name, country, lei, etc. or None if no confident match
-    """
-    result = resolve_company(name, country=country)
-    return result.get("final")
-
-
 
 
 
@@ -222,10 +186,10 @@ __all__ = [
     "get_identifier",            # Alias for backwards compatibility
     "normalize_company_name",    # Primary normalization function
     "canonicalize_company_name", # Primary canonicalization function
-    "normalize_name",            # Deprecated alias (backwards compatibility)
     "match_company",
     "resolve_company",
     "list_companies",
+    "load_companies",            # Direct import from companyresolver
     "extract_companies",
     "get_company_id",
 ]
