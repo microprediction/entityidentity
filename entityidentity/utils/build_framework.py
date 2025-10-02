@@ -19,19 +19,22 @@ from entityidentity.utils.build_utils import load_yaml_file
 class BuildConfig:
     """Configuration for building an entity database."""
 
+    # Input source (one of these required)
+    input_yaml: Optional[Path] = None  # For YAML-based entities
+    input_data: Optional[List[dict]] = None  # For direct data (e.g., downloaded files)
+
     # File paths (required)
-    input_yaml: Path
-    output_parquet: Path
+    output_parquet: Path = None
 
     # Entity-specific callbacks (required)
-    process_entity: Callable[[dict], dict]  # Convert YAML entry to DataFrame row
-    validate_data: Callable[[pd.DataFrame, Optional[dict]], List[str]]  # Return validation issues
-    generate_summary: Callable[[pd.DataFrame, Optional[dict]], None]  # Print summary stats
+    process_entity: Callable[[dict], dict] = None  # Convert YAML entry to DataFrame row
+    validate_data: Callable[[pd.DataFrame, Optional[dict]], List[str]] = None  # Return validation issues
+    generate_summary: Callable[[pd.DataFrame, Optional[dict]], None] = None  # Print summary stats
 
     # Entity metadata (required)
-    entity_name: str  # "basket", "metal", etc.
-    entity_plural: str  # "baskets", "metals", etc.
-    yaml_key: str  # Key in YAML file ("baskets", "metals")
+    entity_name: str = None  # "basket", "metal", etc.
+    entity_plural: str = None  # "baskets", "metals", etc.
+    yaml_key: Optional[str] = None  # Key in YAML file ("baskets", "metals") - required if input_yaml used
 
     # Optional fields
     aux_yaml: Optional[Path] = None  # For metals' supply_chain_clusters.yaml
@@ -45,11 +48,21 @@ def build_entity_database(config: BuildConfig) -> int:
     Returns:
         0 on success, 1 if validation issues found
     """
-    print(f"Building {config.entity_plural} database from {config.input_yaml}")
+    # Determine input source
+    if config.input_data is not None:
+        source = "direct data"
+        print(f"Building {config.entity_plural} database from {source}")
+        entities = config.input_data
+    elif config.input_yaml is not None:
+        source = str(config.input_yaml)
+        print(f"Building {config.entity_plural} database from {source}")
 
-    # Load source data
-    print("Loading YAML files...")
-    yaml_data = load_yaml_file(config.input_yaml)
+        # Load source data
+        print("Loading YAML files...")
+        yaml_data = load_yaml_file(config.input_yaml)
+        entities = yaml_data.get(config.yaml_key, [])
+    else:
+        raise ValueError("Either input_yaml or input_data must be provided")
 
     # Load auxiliary data if needed (e.g., clusters for metals)
     aux_data = None
@@ -59,7 +72,6 @@ def build_entity_database(config: BuildConfig) -> int:
         print(f"Loaded {len(aux_data)} {config.aux_yaml_key}")
 
     # Process entities
-    entities = yaml_data.get(config.yaml_key, [])
     print(f"Processing {len(entities)} {config.entity_plural}...")
 
     rows = [config.process_entity(entity) for entity in entities]
@@ -85,8 +97,15 @@ def build_entity_database(config: BuildConfig) -> int:
     else:
         print("✅ All validations passed")
 
-    # Sort by name for consistent output
-    df = df.sort_values('name').reset_index(drop=True)
+    # Sort by name for consistent output (if name column exists)
+    if 'name' in df.columns:
+        df = df.sort_values('name').reset_index(drop=True)
+    elif 'admin1' in df.columns:
+        # For places, sort by admin1
+        df = df.sort_values('admin1').reset_index(drop=True)
+    else:
+        # Sort by first column
+        df = df.sort_values(df.columns[0]).reset_index(drop=True)
 
     # Write to Parquet
     print(f"\nWriting {len(df)} {config.entity_plural} to {config.output_parquet}")

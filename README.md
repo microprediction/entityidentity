@@ -85,6 +85,8 @@ company_identifier("AAPL")            # → 'Apple Inc:US'
 - **Companies**: 655+ pre-filtered (or build 100K+ full database)
 - **Countries**: 249 ISO-compliant with fuzzy matching
 - **Metals**: 50+ elements, alloys, compounds with supply chain clustering
+- **Baskets**: 5 predefined metal combinations (PGM 4E, PGM 5E, NdPr, REE Light, Battery Pack)
+- **Periods**: Temporal normalization (years, quarters, halves, months, weeks, ranges)
 
 ### Fast Performance
 - **<100ms** query latency (99%+ search space reduction via blocking)
