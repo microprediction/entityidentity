@@ -45,6 +45,11 @@ from entityidentity.companies.companyfilter import (
     load_config,
 )
 
+# Build utilities (for database generation)
+from entityidentity.companies.data.build_companies import (
+    consolidate_companies,
+)
+
 __all__ = [
     # Main API
     "normalize_company_name",
@@ -68,5 +73,7 @@ __all__ = [
     # LLM filtering
     "filter_companies_llm",
     "load_config",
+    # Build utilities
+    "consolidate_companies",
 ]
 

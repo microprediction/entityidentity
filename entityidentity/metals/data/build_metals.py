@@ -25,6 +25,7 @@ from entityidentity.metals.metalnormalize import (
     slugify_metal_name,
     generate_metal_id,
 )
+from entityidentity.shared_utils import expand_aliases, load_yaml_file
 
 
 def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:
@@ -72,31 +73,7 @@ def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:
     return True
 
 
-def expand_aliases(aliases: Optional[List[str]], max_columns: int = 10) -> Dict[str, str]:
-    """
-    Expand aliases list into alias1...alias10 columns.
-    """
-    result = {}
-    if not aliases:
-        aliases = []
-
-    for i in range(1, max_columns + 1):
-        col_name = f"alias{i}"
-        if i <= len(aliases):
-            result[col_name] = str(aliases[i - 1])
-        else:
-            result[col_name] = ""
-
-    return result
-
-
-def load_yaml_file(path: Path) -> dict:
-    """Load and parse YAML file."""
-    if not path.exists():
-        raise FileNotFoundError(f"Required file not found: {path}")
-
-    with open(path, 'r') as f:
-        return yaml.safe_load(f)
+# expand_aliases and load_yaml_file are now imported from shared_utils
 
 
 def validate_data(df: pd.DataFrame, clusters: dict) -> List[str]:

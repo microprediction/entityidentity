@@ -1,15 +1,22 @@
 """Entity Identity - Ontology / Entity Resolution
 
-Public API for entity resolution across companies, countries, and metals.
+Public API for entity resolution across companies, countries, metals, and baskets.
 
 Usage:
     from entityidentity import company_identifier, match_company
+    from entityidentity import metal_identifier, basket_identifier
 
     # Get canonical company identifier
     company_id = company_identifier("Apple")  # Returns: 'Apple Inc:US'
 
     # Get full company details
     company = match_company("BHP", country="AU")
+
+    # Resolve metal names
+    metal = metal_identifier("Pt")  # Returns: {'name': 'Platinum', 'symbol': 'Pt', ...}
+
+    # Resolve basket names
+    basket = basket_identifier("PGM 4E")  # Returns: {'basket_id': 'PGM_4E', ...}
 
 See entityidentity/companies/API.md for full documentation.
 """
@@ -61,6 +68,26 @@ from .metals.metalextractor import (
     extract_metal_pairs,       # Extract metal pairs/combinations
 )
 
+# ============================================================================
+# Basket Resolution API
+# ============================================================================
+
+from .baskets.basketapi import (
+    basket_identifier,       # Primary API - resolve basket name to canonical form
+    match_basket,            # Get top-K candidate matches
+    list_baskets,            # List all available baskets
+    get_basket_components,   # Get component metals for a basket
+    load_baskets,            # Load baskets database
+)
+
+# ============================================================================
+# Build Utilities (for database generation)
+# ============================================================================
+
+from .companies.data.build_companies import (
+    consolidate_companies,   # Build companies database from multiple sources
+)
+
 __all__ = [
     # Version
     "__version__",
@@ -71,6 +98,7 @@ __all__ = [
     "company_identifier",   # Resolve company name -> canonical ID
     "country_identifier",   # Resolve country name -> ISO code
     "metal_identifier",     # Resolve metal name -> canonical form
+    "basket_identifier",    # Resolve basket name -> canonical form
 
     # ========================================================================
     # Company Resolution
@@ -97,5 +125,18 @@ __all__ = [
     "load_metals",              # Load metals database
     "extract_metals_from_text", # Extract metals from text
     "extract_metal_pairs",      # Extract metal pairs
+
+    # ========================================================================
+    # Basket Resolution
+    # ========================================================================
+    "match_basket",            # Get top-K basket matches
+    "list_baskets",            # List all available baskets
+    "get_basket_components",   # Get component metals for a basket
+    "load_baskets",            # Load baskets database
+
+    # ========================================================================
+    # Build Utilities
+    # ========================================================================
+    "consolidate_companies",   # Build companies database from multiple sources
 ]
 

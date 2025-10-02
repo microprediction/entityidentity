@@ -295,7 +295,7 @@ class TestBuildScript:
     
     def test_consolidate_with_samples(self):
         """Test that consolidation works with sample data."""
-        from entityidentity.build_companies_db import consolidate_companies
+        from entityidentity.companies.data.build_companies import consolidate_companies
         
         df = consolidate_companies(use_samples=True)
         
@@ -321,7 +321,7 @@ class TestBuildScript:
     
     def test_consolidate_deduplicates(self):
         """Test that consolidation removes duplicates."""
-        from entityidentity.build_companies_db import consolidate_companies
+        from entityidentity.companies.data.build_companies import consolidate_companies
         
         df = consolidate_companies(use_samples=True)
         
@@ -349,7 +349,7 @@ class TestFullIntegration:
     @pytest.mark.skipif(not TEST_LIVE, reason="Live API testing disabled")
     def test_build_full_database(self, tmp_path):
         """Test building a full database from live sources."""
-        from entityidentity.build_companies_db import consolidate_companies
+        from entityidentity.companies.data.build_companies import consolidate_companies
         
         # This is slow but comprehensive
         df = consolidate_companies(

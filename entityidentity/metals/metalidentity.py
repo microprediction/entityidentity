@@ -25,6 +25,7 @@ except ImportError as e:
     raise ImportError("rapidfuzz not installed. pip install rapidfuzz") from e
 
 from entityidentity.metals.metalnormalize import normalize_metal_name
+from entityidentity.utils.resolver import get_aliases, score_candidate
 
 
 # ---- Helper: Parse "metal:form" hints ----
@@ -59,7 +60,11 @@ def _parse_metal_form_hint(query: str) -> tuple[str, Optional[str]]:
 
 # ---- Helper: Extract alias columns as list ----
 def _get_aliases(row: pd.Series) -> list[str]:
-    """Extract all non-null alias values from alias1...alias10 columns.
+    """
+    Extract all non-null alias values from alias1...alias10 columns.
+
+    This is a wrapper around the shared get_aliases function that applies
+    metal-specific normalization.
 
     Args:
         row: DataFrame row with alias1, alias2, ..., alias10 columns
@@ -72,12 +77,7 @@ def _get_aliases(row: pd.Series) -> list[str]:
         >>> _get_aliases(row)
         ['pt', 'platinum']
     """
-    aliases = []
-    for i in range(1, 11):  # alias1 through alias10
-        col = f"alias{i}"
-        if col in row.index and pd.notna(row[col]) and str(row[col]).strip():
-            aliases.append(normalize_metal_name(str(row[col])))
-    return aliases
+    return get_aliases(row, normalize_metal_name)
 
 
 # ---- Helper: Build candidate pool for scoring ----
@@ -147,10 +147,11 @@ def _build_candidate_pool(
 
 # ---- Helper: Score a single candidate against query ----
 def _score_candidate(row: pd.Series, query_norm: str) -> float:
-    """Score a candidate metal row against normalized query.
+    """
+    Score a candidate metal row against normalized query.
 
-    Uses RapidFuzz WRatio scorer as specified in section 6.
-    Checks both name_norm and all alias columns.
+    This is a wrapper around the shared score_candidate function that applies
+    metal-specific normalization.
 
     Args:
         row: Candidate metal row
@@ -159,18 +160,7 @@ def _score_candidate(row: pd.Series, query_norm: str) -> float:
     Returns:
         Best fuzzy match score (0-100) across name and aliases
     """
-    # Collect all searchable strings: name_norm + aliases
-    searchable = [row["name_norm"]]
-    searchable.extend(_get_aliases(row))
-
-    # Score query against all searchable strings, take best
-    best_score = 0.0
-    for s in searchable:
-        if pd.notna(s) and str(s).strip():
-            score = fuzz.WRatio(query_norm, str(s).lower())
-            best_score = max(best_score, score)
-
-    return best_score
+    return score_candidate(row, query_norm, normalize_metal_name)
 
 
 # ---- Main resolution function ----

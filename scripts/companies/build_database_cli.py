@@ -44,7 +44,7 @@ import pandas as pd
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from entityidentity.build_companies_db import consolidate_companies
+from entityidentity.companies.data.build_companies import consolidate_companies
 
 
 def _write_info_file(info_path: Path, data: pd.DataFrame, args):

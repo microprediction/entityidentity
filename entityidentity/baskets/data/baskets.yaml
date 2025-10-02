@@ -1,0 +1,124 @@
+# Basket Definitions
+# Each basket represents a composite commodity made up of multiple metals/materials
+#
+# Format:
+#   basket_id: Unique identifier for the basket
+#   name: Primary display name
+#   aliases: Alternative names for the basket
+#   components: List of constituent metals/materials
+#     - symbol: Metal symbol (e.g., "Pt", "Li")
+#       weight_pct: Weight percentage in basket (optional, null if unknown)
+#       notes: Additional context (optional)
+#   description: Brief description of the basket and its uses
+
+baskets:
+  - basket_id: "PGM_4E"
+    name: "PGM 4E"
+    aliases:
+      - "4E PGM"
+      - "Four Element PGM"
+      - "Platinum Group 4E"
+      - "4E Basket"
+    components:
+      - symbol: "Pt"
+        weight_pct: null
+        notes: "Platinum"
+      - symbol: "Pd"
+        weight_pct: null
+        notes: "Palladium"
+      - symbol: "Rh"
+        weight_pct: null
+        notes: "Rhodium"
+      - symbol: "Au"
+        weight_pct: null
+        notes: "Gold"
+    description: "Traditional platinum group metals basket including gold, commonly used in South African mining"
+
+  - basket_id: "PGM_5E"
+    name: "PGM 5E"
+    aliases:
+      - "5E PGM"
+      - "Five Element PGM"
+      - "Platinum Group 5E"
+      - "5E Basket"
+    components:
+      - symbol: "Pt"
+        weight_pct: null
+        notes: "Platinum"
+      - symbol: "Pd"
+        weight_pct: null
+        notes: "Palladium"
+      - symbol: "Rh"
+        weight_pct: null
+        notes: "Rhodium"
+      - symbol: "Au"
+        weight_pct: null
+        notes: "Gold"
+      - symbol: "Ir"
+        weight_pct: null
+        notes: "Iridium"
+    description: "Extended platinum group metals basket including iridium, used for higher-grade deposits"
+
+  - basket_id: "NDPR"
+    name: "NdPr"
+    aliases:
+      - "NdPr Oxide"
+      - "Neodymium-Praseodymium"
+      - "Nd-Pr"
+      - "NdPr Basket"
+      - "Didymium"
+    components:
+      - symbol: "Nd"
+        weight_pct: null
+        notes: "Neodymium - typically 75-80% of mixture"
+      - symbol: "Pr"
+        weight_pct: null
+        notes: "Praseodymium - typically 20-25% of mixture"
+    description: "Combined rare earth element basket, difficult to separate economically, critical for permanent magnets"
+
+  - basket_id: "REE_LIGHT"
+    name: "REE Light"
+    aliases:
+      - "Light Rare Earths"
+      - "LREE"
+      - "Light REE"
+      - "Light Rare Earth Elements"
+    components:
+      - symbol: "La"
+        weight_pct: null
+        notes: "Lanthanum"
+      - symbol: "Ce"
+        weight_pct: null
+        notes: "Cerium"
+      - symbol: "Pr"
+        weight_pct: null
+        notes: "Praseodymium"
+      - symbol: "Nd"
+        weight_pct: null
+        notes: "Neodymium"
+    description: "Light rare earth elements basket, more abundant than heavy REE, used in various industrial applications"
+
+  - basket_id: "BATTERY_PACK"
+    name: "Battery Pack"
+    aliases:
+      - "EV Battery Basket"
+      - "Li-ion Battery Metals"
+      - "Battery Metals"
+      - "Battery Materials"
+    components:
+      - symbol: "Li"
+        weight_pct: null
+        notes: "Lithium"
+      - symbol: "Co"
+        weight_pct: null
+        notes: "Cobalt"
+      - symbol: "Ni"
+        weight_pct: null
+        notes: "Nickel"
+      - symbol: "Mn"
+        weight_pct: null
+        notes: "Manganese"
+      - symbol: "C"
+        weight_pct: null
+        notes: "Graphite (anode material)"
+    description: "Key materials for lithium-ion batteries used in electric vehicles and energy storage"

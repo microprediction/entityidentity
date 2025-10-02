@@ -24,8 +24,12 @@ Examples:
   'ammonium-paratungstate-apt'
 """
 
-import re
-import unicodedata
+from entityidentity.utils.normalize import (
+    normalize_name as _normalize_name,
+    canonicalize_name as _canonicalize_name,
+    slugify_name as _slugify_name,
+    normalize_quotes,
+)
 
 
 def normalize_metal_name(s: str) -> str:
@@ -62,24 +66,12 @@ def normalize_metal_name(s: str) -> str:
     if not s:
         return ""
 
-    # Strip and lowercase
-    s = s.strip().lower()
+    # Normalize quotes first
+    s = normalize_quotes(s)
 
-    # Unicode normalization (NFC)
-    s = unicodedata.normalize("NFC", s)
-
-    # Normalize quotes/apostrophes
-    s = s.replace("'", "'").replace("'", "'")
-    s = s.replace(""", '"').replace(""", '"')
-
-    # Keep alphanumerics, spaces, and useful punctuation for metal names
+    # Use shared normalization with metal-specific allowed characters
     # Allow: letters, numbers, space, hyphen, slash, parentheses, percent
-    s = re.sub(r"[^a-z0-9\s\-/()%]", " ", s)
-
-    # Collapse multiple spaces
-    s = re.sub(r"\s+", " ", s)
-
-    return s.strip()
+    return _normalize_name(s, allowed_chars=r"a-z0-9\s\-/()%")
 
 
 def canonicalize_metal_name(s: str) -> str:
@@ -114,15 +106,8 @@ def canonicalize_metal_name(s: str) -> str:
     if not s:
         return ""
 
-    # Strip and collapse spaces
-    s = s.strip()
-    s = re.sub(r"\s+", " ", s)
-
-    # Title case (note: this will lowercase interior capitals)
-    # For preserving specific cases like "NdPr", the YAML source should store canonical form
-    s = s.title()
-
-    return s
+    # Use shared canonicalization with title case
+    return _canonicalize_name(s, apply_title_case=True)
 
 
 def slugify_metal_name(s: str) -> str:
@@ -163,26 +148,8 @@ def slugify_metal_name(s: str) -> str:
     if not s:
         return ""
 
-    # Strip and lowercase
-    s = s.strip().lower()
-
-    # Unicode normalization and ASCII conversion
-    s = unicodedata.normalize("NFKD", s)
-    s = s.encode("ascii", "ignore").decode("ascii")
-
-    # Replace spaces and underscores with hyphens
-    s = re.sub(r"[\s_]+", "-", s)
-
-    # Remove all non-alphanumeric except hyphens
-    s = re.sub(r"[^a-z0-9\-]", "", s)
-
-    # Collapse multiple hyphens
-    s = re.sub(r"-+", "-", s)
-
-    # Strip leading/trailing hyphens
-    s = s.strip("-")
-
-    return s
+    # Use shared slugification
+    return _slugify_name(s)
 
 
 # ---- Helper for generating deterministic metal_id ----
