@@ -274,7 +274,7 @@ def resolve_instrument(
         >>> resolve_instrument("LME aluminum", df, source_hint="LME")
         Series(asset_id="LME_AL_CASH", Name="LME Aluminium Cash", ...)
     """
-    if not text or text.strip() == "":
+    if text is None or not text or text.strip() == "":
         return None
 
     # Normalize query
