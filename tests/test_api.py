@@ -23,7 +23,6 @@ from entityidentity import (
     country_identifiers,
     get_identifier,  # Backwards compatibility
 )
-from conftest import skip_if_no_data
 
 
 class TestCompanyIdentifier:
