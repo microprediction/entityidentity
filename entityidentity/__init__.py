@@ -28,7 +28,7 @@ Usage:
 See entityidentity/companies/API.md for full documentation.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.2.0"
 
 # ============================================================================
 # Company Resolution API
@@ -120,6 +120,30 @@ from .units.unitapi import (
 )
 
 # ============================================================================
+# Instruments Resolution API
+# ============================================================================
+
+from .instruments.instrumentapi import (
+    instrument_identifier,   # Primary API - resolve ticker to canonical form
+    match_instruments,       # Get top-K candidate matches
+    list_instruments,        # List/filter available instruments
+)
+
+from .instruments.instrumentloaders import (
+    load_instruments,        # Load instruments database
+    clear_cache as clear_instruments_cache,  # Clear instruments cache
+)
+
+# ============================================================================
+# Facilities Linking API
+# ============================================================================
+
+from .facilities.facilitylink import (
+    link_facility,           # Primary API - link facility name to company
+    FacilityLinker,          # Facility linking class
+)
+
+# ============================================================================
 # Build Utilities (for database generation)
 # ============================================================================
 
@@ -140,7 +164,9 @@ __all__ = [
     "basket_identifier",    # Resolve basket name -> canonical form
     "place_identifier",     # Resolve place name -> canonical form
     "period_identifier",    # Resolve period text -> canonical form
+    "instrument_identifier",# Resolve ticker -> canonical form
     "normalize_unit",       # Normalize value/unit/basis to canonical form
+    "link_facility",        # Link facility name to company
 
     # ========================================================================
     # Company Resolution
@@ -195,9 +221,21 @@ __all__ = [
     # ========================================================================
     # Units Normalization
     # ========================================================================
-    "normalize_unit",              # Normalize value/unit/basis to canonical form
     "get_canonical_unit",          # Get canonical unit and basis for a material
     "validate_conversion_inputs",  # Validate required parameters are present
+
+    # ========================================================================
+    # Instruments Resolution
+    # ========================================================================
+    "match_instruments",           # Get top-K instrument matches
+    "list_instruments",            # List available instruments
+    "load_instruments",            # Load instruments database
+    "clear_instruments_cache",     # Clear instruments cache
+
+    # ========================================================================
+    # Facilities Linking
+    # ========================================================================
+    "FacilityLinker",              # Facility linking class
 
     # ========================================================================
     # Build Utilities
