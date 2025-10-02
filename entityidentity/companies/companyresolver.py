@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional
 import pandas as pd
 
 from entityidentity.companies.companynormalize import (
-    normalize_name,
+    normalize_company_name,
     LEGAL_RE,
 )
 from entityidentity.companies.companyblocking import block_candidates
@@ -51,7 +51,7 @@ def load_companies(data_path: Optional[str] = None) -> pd.DataFrame:
         df = pd.read_csv(data_path)
 
     if "name_norm" not in df.columns:
-        df["name_norm"] = df["name"].map(normalize_name)
+        df["name_norm"] = df["name"].map(normalize_company_name)
 
     for i in range(1, 6):
         col = f"alias{i}"
@@ -76,7 +76,7 @@ def resolve_company(
     """Resolve company name to canonical entity with decision logic."""
     df = load_companies(data_path)
 
-    query_norm = normalize_name(name)
+    query_norm = normalize_company_name(name)
     candidates = block_candidates(df, query_norm, country)
     scored = score_candidates(candidates, query_norm, country, k)
 

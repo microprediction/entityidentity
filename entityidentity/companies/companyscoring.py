@@ -6,7 +6,7 @@ from typing import Optional
 import pandas as pd
 from rapidfuzz import fuzz, process
 
-from entityidentity.companies.companynormalize import normalize_name
+from entityidentity.companies.companynormalize import normalize_company_name
 
 
 def score_candidates(
@@ -50,7 +50,7 @@ def score_candidates(
             if alias_col in df.columns:
                 alias = row[alias_col]
                 if pd.notna(alias):
-                    alias_norm = normalize_name(str(alias))
+                    alias_norm = normalize_company_name(str(alias))
                     alias_score = fuzz.WRatio(query_norm, alias_norm)
                     best_alias_score = max(best_alias_score, alias_score)
         alias_scores.append(best_alias_score)

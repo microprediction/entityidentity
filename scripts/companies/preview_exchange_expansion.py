@@ -86,13 +86,13 @@ def deduplicate_against_existing(exchange_df, existing_df):
     print("=" * 70)
     
     # Normalize names for comparison
-    from entityidentity.companies.companynormalize import canonicalize_name
+    from entityidentity.companies.companynormalize import canonicalize_company_name
     
     # Build lookup sets from existing data
     existing_names = set()
     for name in existing_df['name'].dropna():
         if isinstance(name, str):
-            existing_names.add(canonicalize_name(name).lower())
+            existing_names.add(canonicalize_company_name(name).lower())
     
     existing_tickers = set()
     for col in ['alias1', 'alias2', 'alias3', 'alias4', 'alias5']:
@@ -113,7 +113,7 @@ def deduplicate_against_existing(exchange_df, existing_df):
         if not isinstance(row.get('name'), str):
             continue
             
-        name_canon = canonicalize_name(row['name']).lower()
+        name_canon = canonicalize_company_name(row['name']).lower()
         ticker_lower = row.get('ticker', '').lower() if isinstance(row.get('ticker'), str) else ""
         
         # Check if already in dataset
@@ -207,12 +207,12 @@ def main():
             cache = json.load(f)
         
         # Estimate how many might be cached
-        from entityidentity.companies.companynormalize import canonicalize_name
+        from entityidentity.companies.companynormalize import canonicalize_company_name
         cache_keys = set(cache.keys())
         for _, row in new_companies.iterrows():
             if not isinstance(row.get('name'), str):
                 continue
-            cache_key = f"{canonicalize_name(row['name'])}|{row.get('country', '')}"
+            cache_key = f"{canonicalize_company_name(row['name'])}|{row.get('country', '')}"
             if cache_key in cache_keys:
                 cached_count += 1
     

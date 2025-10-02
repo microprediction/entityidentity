@@ -5,7 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
-from entityidentity.companies.companynormalize import normalize_name
+from entityidentity.companies.companynormalize import normalize_company_name
 
 
 def block_candidates(
@@ -43,7 +43,7 @@ def block_candidates(
             alias_col = f"alias{i}"
             if alias_col in candidates.columns:
                 alias_mask |= candidates[alias_col].notna() & candidates[alias_col].apply(
-                    lambda alias: normalize_name(str(alias)).startswith(first_token) if pd.notna(alias) else False
+                    lambda alias: normalize_company_name(str(alias)).startswith(first_token) if pd.notna(alias) else False
                 )
 
         combined_mask = name_mask | alias_mask

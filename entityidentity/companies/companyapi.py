@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any, Tuple
 import pandas as pd
 
 from entityidentity.companies.companynormalize import (
-    normalize_name as _normalize_name,
+    normalize_company_name as _normalize_company_name,
 )
 from entityidentity.companies.companyresolver import (
     resolve_company as _resolve_company,
@@ -55,14 +55,14 @@ get_identifier = company_identifier
 
 def normalize_name(name: str) -> str:
     """Normalize company name for matching.
-    
+
     Args:
         name: Company name to normalize
-        
+
     Returns:
         Normalized string (lowercase, no punctuation, legal suffixes removed)
     """
-    return _normalize_name(name)
+    return _normalize_company_name(name)
 
 
 def match_company(name: str, country: Optional[str] = None) -> Optional[Dict[str, Any]]:

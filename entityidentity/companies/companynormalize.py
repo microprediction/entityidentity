@@ -9,14 +9,14 @@ import re
 import unicodedata
 
 
-def canonicalize_name(name: str) -> str:
+def canonicalize_company_name(name: str) -> str:
     """Canonicalize company name for DISPLAY and IDENTIFIERS.
 
     This function preserves readability while ensuring names are safe for identifiers.
     Use this for: display names, database identifiers, user-facing output.
     DO NOT use this for: fuzzy matching or deduplication.
 
-    For matching/deduplication, use companyidentity.normalize_name()
+    For matching/deduplication, use normalize_company_name()
 
     Ensures the name is safe to use in the identifier format "name:country"
     by removing/normalizing special characters that could cause parsing issues.
@@ -112,7 +112,7 @@ LEGAL_SUFFIXES = (
 LEGAL_RE = re.compile(rf"\b{LEGAL_SUFFIXES}\b\.?", re.IGNORECASE)
 
 
-def normalize_name(name: str) -> str:
+def normalize_company_name(name: str) -> str:
     """Normalize company name for fuzzy matching.
     
     Steps:
@@ -139,9 +139,16 @@ def normalize_name(name: str) -> str:
 
 
 __all__ = [
-    'canonicalize_name',
+    'canonicalize_company_name',
     'validate_canonical_name',
-    'normalize_name',
+    'normalize_company_name',
     'LEGAL_RE',
+    # Backwards compatibility aliases
+    'canonicalize_name',
+    'normalize_name',
 ]
+
+# Backwards compatibility aliases
+canonicalize_name = canonicalize_company_name
+normalize_name = normalize_company_name
 
