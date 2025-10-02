@@ -1,18 +1,25 @@
 """
-Shared Utility Functions
-------------------------
+Shared Utility Functions (DEPRECATED)
+--------------------------------------
 
-Common functions used across multiple entity modules (metals, baskets, etc.).
-This module consolidates duplicate code to reduce maintenance burden.
+DEPRECATED: This module is deprecated. Use the following instead:
+  - entityidentity.utils.normalize: For normalization functions
+  - entityidentity.utils.resolver: For resolution functions
+  - entityidentity.utils.build_utils: For build utilities
 
-Functions:
-  - slugify_name: URL/key-safe slug generation
-  - generate_entity_id: Deterministic 16-character hex ID generation
-  - get_aliases: Extract alias columns from DataFrame row
-  - score_candidate: RapidFuzz scoring for entity resolution
-  - expand_aliases: Expand alias list into alias1...alias10 columns
-  - load_yaml_file: Load and parse YAML file
+This module is kept for backward compatibility only and will be removed in a future version.
+All functions below now import from the new locations.
 """
+
+import warnings
+
+warnings.warn(
+    "entityidentity.shared_utils is deprecated. "
+    "Use entityidentity.utils.normalize, entityidentity.utils.resolver, "
+    "or entityidentity.utils.build_utils instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import re
 import unicodedata

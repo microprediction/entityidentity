@@ -25,41 +25,7 @@ from entityidentity.baskets.basketnormalize import (
     slugify_basket_name,
     generate_basket_id,
 )
-from entityidentity.shared_utils import expand_aliases, load_yaml_file
-
-
-# expand_aliases is now imported from shared_utils
-
-
-def expand_components(components: Optional[List[dict]], max_columns: int = 10) -> Dict[str, str]:
-    """
-    Expand components list into component1...component10 columns.
-
-    Each component is stored as: "symbol" or "symbol:weight_pct" if weight is known.
-    Example: "Pt" or "Li:0.15" (15% lithium by weight)
-    """
-    result = {}
-    if not components:
-        components = []
-
-    for i in range(1, max_columns + 1):
-        col_name = f"component{i}"
-        if i <= len(components):
-            comp = components[i - 1]
-            symbol = comp.get('symbol', '')
-            weight_pct = comp.get('weight_pct')
-
-            if weight_pct is not None:
-                result[col_name] = f"{symbol}:{weight_pct}"
-            else:
-                result[col_name] = symbol
-        else:
-            result[col_name] = ""
-
-    return result
-
-
-# load_yaml_file is now imported from shared_utils
+from entityidentity.utils.build_utils import expand_aliases, expand_components, load_yaml_file
 
 
 def validate_data(df: pd.DataFrame) -> List[str]:

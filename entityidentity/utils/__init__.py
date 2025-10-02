@@ -18,6 +18,11 @@ from entityidentity.utils.resolver import (
     find_best_match,
     topk_matches,
 )
+from entityidentity.utils.build_utils import (
+    load_yaml_file,
+    expand_aliases,
+    expand_components,
+)
 
 __all__ = [
     # Data loading
@@ -35,4 +40,8 @@ __all__ = [
     "score_all_candidates",
     "find_best_match",
     "topk_matches",
+    # Build utilities
+    "load_yaml_file",
+    "expand_aliases",
+    "expand_components",
 ]

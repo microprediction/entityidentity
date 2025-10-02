@@ -25,7 +25,7 @@ from entityidentity.metals.metalnormalize import (
     slugify_metal_name,
     generate_metal_id,
 )
-from entityidentity.shared_utils import expand_aliases, load_yaml_file
+from entityidentity.utils.build_utils import expand_aliases, load_yaml_file
 
 
 def validate_basis(unit: Optional[str], basis: Optional[str]) -> bool:

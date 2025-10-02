@@ -110,7 +110,7 @@ def test_trade_terms_apt(metals_df):
     # Direct name match should work
     result = metal_identifier("ammonium paratungstate")
     assert result is not None
-    assert result["name"] == "Ammonium paratungstate"
+    assert result["name"] == "Ammonium Paratungstate"
     assert result["code"] == "WO3"
     assert result["default_basis"] == "$/mtu WO3"
     assert result["default_unit"] == "mtu"
@@ -136,7 +136,7 @@ def test_trade_terms_lithium_carbonate(metals_df):
     li_carb = metals_df[metals_df["metal_key"] == "lithium-carbonate"]
     assert len(li_carb) == 1
     result = li_carb.iloc[0]
-    assert result["name"] == "Lithium carbonate"
+    assert result["name"] == "Lithium Carbonate"
     assert result["formula"] == "Li2CO3"
     assert "Li2CO3" in result["default_basis"]
 
